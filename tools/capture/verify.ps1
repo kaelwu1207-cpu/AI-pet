@@ -1,22 +1,26 @@
 param(
-    [ValidateSet('library','native')][string]$Backend = 'library',
+    [ValidateSet('library','native','rust')][string]$Backend = 'library',
     [ValidateRange(1,16)][int]$MinimumDisplays = 2,
     [ValidateRange(2,15)][int]$Seconds = 4
 )
 $ErrorActionPreference = 'Stop'
+if ($Backend -eq 'rust' -and $Seconds -ne 4) { throw 'Rust probe currently uses a fixed four-second window' }
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $runId = [guid]::NewGuid().ToString('N')
 $nonce = [guid]::NewGuid().ToString('N')
 $receiptDir = Join-Path $root "data\receipts\capture\$runId"
 New-Item -ItemType Directory -Path $receiptDir -Force | Out-Null
-$inputs = @(Get-ChildItem -LiteralPath (Join-Path $root 'src\capture'),(Join-Path $root 'tools\capture') -File -Recurse |
-    Where-Object { $_.Extension -in '.py','.cpp','.hpp','.ps1' } |
+$inputs = @(Get-ChildItem -LiteralPath (Join-Path $root 'src\capture'),(Join-Path $root 'src\capture-rust'),(Join-Path $root 'tools\capture') -File -Recurse |
+    Where-Object { $_.Extension -in '.py','.cpp','.hpp','.ps1','.rs','.toml','.lock' } |
     Sort-Object FullName | ForEach-Object { @{path=$_.FullName; bytes=$_.Length; sha256=(Get-FileHash -LiteralPath $_.FullName).Hash} })
 $checkpoint = & git -c "safe.directory=$($root.Replace('\','/'))" -C $root rev-parse HEAD
 if ($LASTEXITCODE -ne 0) { throw 'Cannot bind verification to Git checkpoint' }
 if ($Backend -eq 'library') {
     $exe = Join-Path $root 'data\envs\capture\Scripts\python.exe'
     $arguments = @('-B', (Join-Path $root 'tools\capture\probe_library.py'), '--seconds', "$Seconds", '--min-displays', "$MinimumDisplays")
+} elseif ($Backend -eq 'rust') {
+    $exe = Join-Path $root 'data\build\capture-rust\debug\aipet-gpu-probe.exe'
+    $arguments = @("$MinimumDisplays")
 } else {
     $exe = Join-Path $root 'data\build\capture\probe.exe'
     $arguments = @('--seconds', "$Seconds", '--min-displays', "$MinimumDisplays", '--stimulus')

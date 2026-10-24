@@ -6,7 +6,7 @@
 
 `windows_capture_adapter.py` 直接依赖 `windows-capture==2.0.1`。上游负责 WGC、显示器选择、捕获线程与原生缓冲；本模块提供每路身份/epoch、单调帧序列、回调失败与停止控制。调用方在 consumer 回调内使用 `FramePacket.frame`，不将原帧保留到回调外。
 
-Python 绑定会将 GPU 帧映射为 CPU 可读内存。本路径用于已安装库的功能验证和算法探索，不宣称 GPU 全链路零复制。生产 GPU 处理优先直接接同项目 Rust `Frame::as_raw_texture()` / `device()` / `device_context()`，不再重新实现 WGC。Rust 运行集成尚未完成。
+Python 绑定会将 GPU 帧映射为 CPU 可读内存。本路径用于已安装库的功能验证和算法探索，不宣称 GPU 全链路零复制。[Rust 消费者](../capture-rust/README.md)已直接接通上游 `Frame::as_raw_texture()` / `device()` / `device_context()`，单屏GPU复制及完成查询通过，无屏幕像素读回。生产生命周期和静态统计继续补齐，WGC 后端由上游维护。
 
 依赖版本见根 `requirements-capture.txt`。当前 monitor_index 为上游 1 基索引，外部传入 displayId/epoch；验证器使用 session-only 身份。完整持久身份、动态拓扑恢复、HDR和跨显卡仍待补齐/验证。
 

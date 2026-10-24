@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF><EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="VPetProbe.cs" />
+    <ProjectReference Include="../../data/upstream/vpet/VPet-Simulator.Core/VPet-Simulator.Core.csproj" />
+  </ItemGroup>
+</Project>

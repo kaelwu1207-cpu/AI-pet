@@ -13,6 +13,7 @@
 | 5 | [ASSET-PACKS.md](ASSET-PACKS.md) | 皮肤、动画和特效独立替换规范 |
 | 6 | [OPEN-SOURCE.md](OPEN-SOURCE.md) | 调研证据、候选及复用决策 |
 | 7 | [CAPTURE-STATUS.md](CAPTURE-STATUS.md) | 当前模块实施与验证证据、已知缺口 |
+| 8 | [HOST-SELECTION.md](HOST-SELECTION.md) | VPet/eSheep 固定源码实测、主体选择和适配边界 |
 
 当前程序执行证据索引由 CAPTURE-STATUS 维护，原始回执位于 data。当前无辅助主计划、顾问审查结论或被替代主计划。当前计划角色始终排在历史记录之前；不把屏幕帧、密钥或运行日志写进 docs。
 

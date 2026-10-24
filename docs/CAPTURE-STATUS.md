@@ -9,6 +9,7 @@
 - 已安装并实际使用 `windows-capture 2.0.1`；Python 环境位于 `data/envs/capture`，依赖见 requirements-capture.txt / THIRD-PARTY。
 - `src/capture/windows_capture_adapter.py` 为薄层：身份/epoch、帧序列、消费回调与停止。WGC 捕获、线程、原生缓冲均由上游承担。
 - 原生 C++ WGC 代码是早期硬件对照样例，暂停扩写，不作为需长期自维护的生产后端。
+- `src/capture-rust` 已实际接通上游 `as_raw_texture()` / `device()` / `device_context()`：回调内复制至自有 GPU 纹理并用 EVENT 查询确认完成，无屏幕像素 CPU 读回。依赖由 Cargo.lock 固定，构建与 Clippy 零警告通过。
 
 ## 实际验证与证据
 
@@ -18,6 +19,8 @@
 | 开源库薄适配测试 | 4项 unittest 通过 | 双来源时钟隔离、回调失败、停止后迟到帧、非法目标；使用测试源，不代表双物理屏 |
 | 开源库真实单屏 | 通过，退出0 | 5120×2160，约4秒39帧，无拒绝/错误，停止成功；`data/receipts/capture/b9c2661e9b6549d0ac8bbec764233a8c/receipt.json` |
 | 开源库真实多屏要求 | 条件不足，退出2 | 实际仅1块活动显示器，最低要求2；已有1路正常采集；`data/receipts/capture/2dca94caeae84165be3d5c62107613d1/receipt.json` |
+| Rust 原始 GPU 纹理单屏 | 通过，退出0 | 5120×2160、格式10，4秒39帧，39次GPU复制均完成，无采集错误，无像素读回；`data/receipts/capture/1d6e0af443a1427ebd4d988d60ad2fc1/receipt.json` |
+| Rust 真实双屏要求 | 条件不足，程序退出2 | 实际1屏，39帧正常，要求至少2屏故不通过；`data/receipts/capture/8402558e1ca149c88b1c51e3dec5b194/receipt.json`；外层终端返回1，回执保留实际子进程退出2 |
 | 原生硬件对照 | 单屏通过 | RTX5090、5120×2160、DPI144；3秒97帧，受控ROI变化25次，FP16格式10；未保存画面；首轮工具结果记录，尚非源码检查点完整绑定的验收回执 |
 
 回执包含 runId/nonce、Git 检查点与未提交源文件哈希、进程退出/超时、输入指纹、原始完整stdout/stderr。实际程序结果与源码/平台能力范围分别解释。当前无图片/视频持久化和云上传。
@@ -27,14 +30,14 @@
 ## 当前限制
 
 1. 只有一块活动物理屏，真实多屏、混合DPI、跨显卡、插拔/休眠、旋转均待验证。
-2. Python公开接口映射GPU帧至CPU；它验证上游捕获功能，不是最终全GPU处理链。上游Rust已有 `as_raw_texture()`、`as_raw_surface()`、`device()`、`device_context()`；后续直接复用，不重写WGC。
-3. Python适配的显示身份为session-only，完整稳定身份/拓扑epoch自动重建待接入。
+2. Python公开接口映射GPU帧至CPU；Rust已验证GPU纹理复制消费，但静态统计shader、推理共享和生产服务生命周期尚未接通，不能称完整全GPU产品链。
+3. 当前适配显示身份为session-only/枚举序号，完整稳定身份/拓扑epoch自动重建待接入。
 4. 原生样例使用FP16不等于实际HDR显示验收；HDR状态、色彩与映射待验证。
 5. 采集指示边框暂保持系统默认；其常驻亮区与无边框权限以后集中解决。
-6. 完整 C01/G0/G2 未通过，当前只完成 M01 的首个可复用库运行切片。
+6. 完整 C01/G0/G2 未通过，当前完成上游Python采集与Rust原始GPU纹理消费切片。
 
 ## 下一步
 
-先复用上游Rust API打通原始GPU纹理消费者与项目显示身份/生命周期，再接静态区域统计；只有薄接口缺口才写代码。用户连接第二显示器后，运行 `tools/capture/verify.ps1 -Backend library -MinimumDisplays 2`，分别登记真实两屏和后续GPU原始纹理路径。宠物主体先评估VPet/eSheep可直接复用的控制与资源，不从零重建整套桌宠。
+继续补齐显示身份/生命周期，基于已接通的GPU纹理增加静态区域统计。第二显示器可用后运行 `tools/capture/verify.ps1 -Backend rust -MinimumDisplays 2` 并扩充拓扑/恢复矩阵。宠物主体已实际比较并选择VPet Core，依据见 HOST-SELECTION；接入局部黑幕及覆盖回执后推进垂直闭环。
 
 本记录随模块里程碑更新，原始运行证据按 data README 保留；研究与验收不能互相替代。

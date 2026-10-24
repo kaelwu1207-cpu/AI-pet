@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Interop;
 
 namespace AIpet.Host;
+public sealed class DisplayUnavailableException(string message):ArgumentException(message);
 public static class Native
 {
     public const int Transparent = 0x20, NoActivate = 0x08000000, ToolWindow = 0x80, Layered = 0x80000;
@@ -39,7 +40,7 @@ public static class Native
         var info=new MonitorInfo { Size=Marshal.SizeOf<MonitorInfo>() };
         if(monitor==IntPtr.Zero || !GetMonitorInfo(monitor,ref info)
             || bounds != new PixelRect(info.Monitor.Left,info.Monitor.Top,info.Monitor.Right-info.Monitor.Left,info.Monitor.Bottom-info.Monitor.Top))
-            throw new ArgumentException("Display bounds no longer match an active physical monitor");
+            throw new DisplayUnavailableException("Display bounds no longer match an active physical monitor");
     }
     public static OperationContext ReadOperationContext()
     {

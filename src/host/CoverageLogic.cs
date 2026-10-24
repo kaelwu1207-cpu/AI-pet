@@ -2,7 +2,8 @@ namespace AIpet.Host;
 public sealed record GpuTile(int X,int Y,int Width,int Height,int Visible,int StaticPixels,int StableEdges,
     int MaxAgeMs,int EdgeAgeMs,int Changed,int LumaSum,int Masked);
 public sealed record ObservationFrame(long Sequence,long Timestamp100ns,int MaskRevision,PixelRect Roi,
-    GpuTile[] Tiles,bool Healthy,bool GapReset,double AnalysisWallMs=0,GpuPerformance? Performance=null,int StatisticReadbackBytes=0,int TileSize=16);
+    GpuTile[] Tiles,bool Healthy,bool GapReset,double AnalysisWallMs=0,GpuPerformance? Performance=null,int StatisticReadbackBytes=0,int TileSize=16,
+    string? DisplayId=null,long TopologyEpoch=0);
 public sealed record GpuPerformance(double? GpuMs,ulong? GpuLocalMemoryBytes,ulong OwnedGpuBytes,ulong? GpuNonLocalMemoryBytes=null,string? Adapter=null);
 public sealed record StaticRegion(int Id,PixelRect Bounds,double StableMs,bool Observable,int StableEdges,double Brightness);
 public sealed record OperationContext(PixelRect[] Exclusions,bool RecentInput)

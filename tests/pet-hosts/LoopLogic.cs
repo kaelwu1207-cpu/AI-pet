@@ -38,6 +38,7 @@ static class LoopLogic
         Check(Geometry.Intersects(Geometry.Swept(new(0,0,20,20),new(100,100,20,20)),new(50,50,10,10)),"operation avoidance checks swept path as well as destination");
         invalid=false;try{new StaticMap().Accept(new(1,1000,0,new(0,0,32,16),new[]{tile,tile},true,false));}catch(ArgumentException){invalid=true;}
         Check(invalid,"duplicate GPU tiles cannot inflate full-grid counts");
+        TopologyTests.Run();
         Console.WriteLine("RESULT loop logic passed");
     }
 }

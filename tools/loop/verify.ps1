@@ -30,11 +30,11 @@ function Step([string]$name,[string]$exe,[string[]]$arguments,[int]$seconds) {
 }
 $failure=$null
 try {
-    Step 'rust-build-clippy' $shell @('-NoProfile','-File',"$root/tools/capture/build-rust.ps1") 60
+    Step 'rust-build-clippy-tests' $shell @('-NoProfile','-File',"$root/tools/capture/build-rust.ps1",'-Test') 60
     Step 'logic-build' $dotnet @('build','tests/pet-hosts/loop-logic.csproj','-c','Release','-o',"$root/data/build/loop-logic",'-warnaserror','-m:1','-nr:false','-p:UseSharedCompilation=false') 30
     Step 'logic' $dotnet @("$root/data/build/loop-logic/loop-logic.dll") 5
     Step 'gpu-loop-build' $dotnet @('build','tests/pet-hosts/loop-gpu.csproj','-c','Release','-o',"$root/data/build/loop-gpu",'-warnaserror','-m:1','-nr:false','-p:UseSharedCompilation=false') 30
-    Step 'gpu-loop' $dotnet @("$root/data/build/loop-gpu/loop-gpu.dll","$out/fixtures") 35
+    Step 'gpu-loop' $dotnet @("$root/data/build/loop-gpu/loop-gpu.dll","$out/fixtures") 50
     Step 'host-regression' $shell @('-NoProfile','-File',"$root/tools/host/verify.ps1") 60
 } catch {$failure=$_.ToString();Write-Output $failure}
 finally {

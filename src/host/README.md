@@ -35,3 +35,4 @@
 `ClosedLoop` 将GPU统计→区域候选→VPet目标→独立黑幕→回执账本连通。运动前预约完整扫过路径的保守遮罩并等待GPU代次确认，到位后等待实际身体遮罩确认；目标效果遮罩保持到撤除。源失效或操作区相交会取消。`Native.ReadOperationContext` 只读鼠标位置、最近输入时间和可用光标矩形，拒绝近期输入和受保护路线/目标，不读取键入正文。
 
 外部入口：`AIpet.Host --closed-loop <resolved-loop-plan.json> <observe.exe> <fresh-data-output-directory>`。运行限1—12秒、最多8个动作，当前单主屏有界ROI。完整验证在 tools/loop/verify.ps1，结果边界见 docs/CLOSED-LOOP.md。
+`DisplayTopology` 读取独立Rust元数据入口，`TopologyTracker` 按设备接口路径和完整布局建立代次。`RecoveringLoop` 管理有界捕获重开：先撤除并关闭旧角色/效果/采集，等待同一显示器可用，再按新边界重建ROI、历史和账本；每次源重开使用新epoch。外部 --closed-loop 入口默认经过此协调器。所有阶段结果保留在运行输出epochs目录，汇总recovery-result与loop-result分别供诊断和已有消费者使用。

@@ -112,11 +112,14 @@ static class LoopGpu
             try {await cli.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));}catch{if(!cli.HasExited)cli.Kill();throw;}
             if(cli.ExitCode!=0)throw new InvalidOperationException(await cliErrors);
             var cliResult=System.Text.Json.JsonSerializer.Deserialize<LoopResult>(await File.ReadAllTextAsync(Path.Combine(cliOutput,"loop-result.json")))!;
-            Check(cliResult.GpuExitCode==0 && cliResult.Actions.Length>0 && cliResult.Actions.All(a=>a.Coverage==null||a.Coverage.RemovalConfirmed),"external JSON entry returns native-policy execution or cancellation with clean removal");
+            Check(cliResult.GpuExitCode==0 && cliResult.Frames>0 && cliResult.CaptureFailure==null
+                && (cliResult.Actions.Length>0 || cliResult.InputSamples>0 && cliResult.AvoidedSelections>0)
+                && cliResult.Actions.All(a=>a.Coverage==null||a.Coverage.RemovalConfirmed),"external JSON entry returns native-policy execution, pause or cancellation with clean removal");
             inject=false;used=true;
             var fullPlan=plan with {Roi=scope.Bounds,TargetBounds=new(x+32,y+32,256,64),MaximumActions=3};
             var full=await ClosedLoop.RunAsync(fullPlan,Path.Combine(root,"data/build/capture-rust/debug/observe.exe"),Path.Combine(output,"full-loop"),ReadInput);
             Check(full.Actions.Length==3 && full.Actions.All(a=>a.Coverage?.RemovalConfirmed==true),"full-screen GPU grid drives three measured local effects inside the owned fixture");
+            await RecoveryTests.Run(plan,Path.Combine(root,"data/build/capture-rust/debug/observe.exe"),output,ReadInput);
         } finally {blink.Stop();dynamicTimer.Stop();fixture.Close();}
     }
 }

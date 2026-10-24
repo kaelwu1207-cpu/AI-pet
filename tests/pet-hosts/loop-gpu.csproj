@@ -1,3 +1,3 @@
 <Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework>
   <UseWPF>true</UseWPF><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-</PropertyGroup><ItemGroup><Compile Include="LoopGpu.cs" /><ProjectReference Include="../../src/host/AIpet.Host.csproj" /></ItemGroup></Project>
+</PropertyGroup><ItemGroup><Compile Include="LoopGpu.cs" /><Compile Include="RecoveryTests.cs" /><ProjectReference Include="../../src/host/AIpet.Host.csproj" /></ItemGroup></Project>

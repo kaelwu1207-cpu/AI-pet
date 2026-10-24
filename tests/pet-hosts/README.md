@@ -14,3 +14,4 @@ AI-pet 维护，可运行测试定义随 Git 保留；第三方源码、私有�
 
 `LoopLogic.cs` / `loop-logic.csproj` 验证静态事实冻结、测量回执一致性/去重、公平分配和操作禁入。`LoopGpu.cs` / `loop-gpu.csproj` 在真实窗口生成1物理像素细线、闪烁文本光标和动态色块，通过Rust GPU统计验证时长，再执行VPet/黑幕/回执闭环。操作测试注入策略区域，保留真实鼠标/caret空间禁入，受控回放近期输入位；纯逻辑另测近期输入暂停。外部JSON入口使用完整原生操作策略。执行及回执入口为 tools/loop/verify.ps1；输入引起的暂停/取消保留实际原因。测试不注入系统键鼠事件。
 `FullScreen.cs` / `full-screen.csproj` 测量真实全屏统计与宿主聚合/调度延迟，并以同等实际服务时长回执验证全屏网格公平性。原始结果进入data/receipts/performance；只保存性能与计数。GPU时间由D3D时间戳查询取得，CPU按单核等效百分比表达，显存计数与自有资源字节分别记录。工具及夹具随模块维护。
+`TopologyTests.cs` 验证枚举/缩放/断开/重连/负坐标/epoch和ROI重定位。`RecoveryTests.cs` 使用实际WGC统计进程与自有黑幕，验证主动重开、旧拓扑启动拒绝、历史重置、旧回执拒绝及启动几何竞态；断开/重连由受控快照注入，真实物理插拔另行验收。定义由loop-logic/loop-gpu项目维护，结果进入data/receipts/loop。

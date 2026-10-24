@@ -16,6 +16,8 @@
 | 8 | [HOST-SELECTION.md](HOST-SELECTION.md) | VPet/eSheep 固定源码实测、主体选择和适配边界 |
 | 9 | [HOST-INTEGRATION.md](HOST-INTEGRATION.md) | 定向运动、独立黑幕、覆盖回执与焦点/穿透/故障撤除实测 |
 | 10 | [CLOSED-LOOP.md](CLOSED-LOOP.md) | GPU静态统计、自身遮挡、公平调度、操作避让与反馈闭环 |
+| 11 | [OBSERVATION-BASELINE.md](OBSERVATION-BASELINE.md) | 共享冻结阈值、GPU真值夹具、全屏性能与参考预算 |
+| 12 | [DISPLAY-LIFECYCLE.md](DISPLAY-LIFECYCLE.md) | 设备接口身份、物理坐标、拓扑代次与有界重开 |
 
 采集、宿主、闭环的执行证据分别由 CAPTURE-STATUS、HOST-INTEGRATION、CLOSED-LOOP 维护，原始回执位于 data。当前无辅助主计划、顾问审查结论或被替代主计划。当前计划角色始终排在历史记录之前；不把屏幕帧、密钥或运行日志写进 docs。
 

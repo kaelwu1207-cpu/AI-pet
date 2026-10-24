@@ -23,3 +23,4 @@ stdin首行 `{"Roi":{"X":0,"Y":0,"Width":320,"Height":128}}`，后续 `{"Revisio
 帧间隔超过1000ms会重新建立静止历史；自身遮挡期间停止计时，不用黑幕色彩覆盖底层历史。首次揭露像素重新建立连续性，宿主另保留此前已观察的事实。颜色比较为8位捕获域的阈值特征；HDR处理仍待验证。原始GPU复制probe与统计流分别提供证据，未重写捕获后端。
 
 `baseline.rs` 编译包含 `contracts/static-v1.json`，宿主读取同一嵌入资源。`gpu_tests.rs` 用自有合成纹理验证500ms边界、7/8色差、亮度/对比阈值、细线、闪烁、自遮挡、揭露重建、时长上限及非整块边界；测试只上传自有像素，读回计数。定义及夹具随Git维护，变更更新基线版本和验证证据。
+`topology.rs` 用Windows QueryDisplayConfig / DisplayConfigGetDeviceInfo解析设备接口路径，并映射到上游Monitor；隐藏被动元数据窗口通过GetDpiForWindow取得精确DPI并立即销毁。--topology输出只读布局，统计入口可选DisplayId/TopologyEpoch/ExpectedSignature，支持负桌面坐标到纹理坐标转换。每500ms核对拓扑，变化或失联以退出3停止，私有restart控制以退出4重开；WGC生命周期继续由windows-capture提供。设备接口路径的稳定范围和恢复验证见docs/DISPLAY-LIFECYCLE.md。

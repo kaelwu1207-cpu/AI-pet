@@ -2,7 +2,7 @@
 
 AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬、玩耍与局部魔法，间歇改变、遮挡或调暗长期静止的画面。后台根据静态暴露、实际覆盖时长和操作避让安排活动，前台保持自然、有性格的表现。
 
-当前阶段：**VPet Core 已接外部定向移动、独立局部黑幕与观测式覆盖回执，并通过焦点/穿透/异常撤除验证；Rust GPU 采集单屏已验证。** 多屏和完整产品待验收。Git 元数据位于本目录 `.git`，初始文档提交为 `7c6c3bc05949f053abf40f7de952729371d4f5e4`。当前 Windows 仅枚举到一块活动显示器。详见 [采集实施记录](docs/CAPTURE-STATUS.md) 和 [主体选型实测](docs/HOST-SELECTION.md)。
+当前阶段：**单主屏有界 ROI 的 GPU 静态识别→公平调度→VPet 定向移动→独立黑幕→实际回执反馈已连通，本地验证通过。** 固定细线、闪烁光标、自遮挡、覆盖公平性和受控操作避让已有证据；全屏、多屏和完整产品待验收。Git 元数据位于本目录 `.git`，初始文档提交为 `7c6c3bc05949f053abf40f7de952729371d4f5e4`。当前 Windows 仅枚举到一块活动显示器。当前执行与边界见 [闭环实现](docs/CLOSED-LOOP.md)、[采集实施记录](docs/CAPTURE-STATUS.md) 和 [主体选型实测](docs/HOST-SELECTION.md)。
 
 ## 文档入口与权威顺序
 
@@ -18,9 +18,13 @@ AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬�
 | [docs/CAPTURE-STATUS.md](docs/CAPTURE-STATUS.md) | 当前采集实现、真实验证、缺口和下一步 |
 | [docs/HOST-SELECTION.md](docs/HOST-SELECTION.md) | VPet/eSheep 实际运动、资源与效果验证；主体改装决策 |
 | [docs/HOST-INTEGRATION.md](docs/HOST-INTEGRATION.md) | 当前宿主整合、运行入口、实际覆盖回执和异常撤除验证 |
+| [docs/CLOSED-LOOP.md](docs/CLOSED-LOOP.md) | GPU 静态历史、遮罩代次、公平调度、操作避让与闭环证据 |
 | [THIRD-PARTY.md](THIRD-PARTY.md) | 已采用组件及版本；`requirements-capture.txt` 锁定验证环境依赖 |
+| [LICENSE](LICENSE)、[NOTICE](NOTICE) | 项目自有源码/文档采用 Apache-2.0；维护版权与第三方许可边界，随分发保留 |
 
 用户最新明确指令与全局/上级目录规则优先。产品目标由 PRODUCT 维护；计划执行由 PLAN 维护；接口和资源包分别由 CONTRACTS、ASSET-PACKS 维护。冲突应显式修订相关文档后继续，文件名和修改时间不改变权威角色。
+
+项目已获所有者公开开源授权，自有源码/文档采用 Apache-2.0。公开仓库为 [kaelwu1207-cpu/AI-pet](https://github.com/kaelwu1207-cpu/AI-pet)，当前开发分支为 `feature/reuse-integration`；GitHub 作为本地Git检查点的协作镜像。本地验证源码检查点为 `a349679a871fdacd8305d268fefbf925e1cbe1ca`，后续文档检查点沿同一分支维护。源码镜像不包含本地data、第三方研究副本、凭据、画面或正式安装包。
 
 ## 项目根与数据角色登记
 
@@ -44,10 +48,10 @@ AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬�
 
 ## 目录职责与后续布局
 
-已建立 `src/host`、`src/capture`、`src/capture-rust`、`tools/capture`、`tools/pet-hosts`、`tools/host`、`tests/capture`、`tests/pet-hosts` 和 `data`，分别由 [采集模块说明](src/capture/README.md)、[Rust GPU 消费者](src/capture-rust/README.md)、[工具索引](tools/README.md)、[测试索引](tests/README.md)、[数据角色](data/README.md)覆盖。其余目录仍为规划：
+已建立 `src/host`、`src/capture`、`src/capture-rust`、`tools/capture`、`tools/pet-hosts`、`tools/host`、`tools/loop`、`tests/capture`、`tests/pet-hosts` 和 `data`，分别由 [采集模块说明](src/capture/README.md)、[Rust GPU 消费者](src/capture-rust/README.md)、[工具索引](tools/README.md)、[测试索引](tests/README.md)、[数据角色](data/README.md)覆盖。后续模块布局如下：
 
-- `src/host/` 已建立：VPet主体、目标控制、独立黑幕和被动窗口桥接，说明见 [宿主模块](src/host/README.md)；完整设置/常驻能力待接入。
-- `src/capture/`、`src/observation/`、`src/coverage/`：GPU 帧、多屏静态分析与覆盖调度。
+- `src/host/` 已建立：VPet主体、目标控制、独立黑幕、静态区域聚合、公平账本、操作策略和闭环编排，说明见 [宿主模块](src/host/README.md)；完整设置/常驻能力待接入。
+- `src/capture-rust/` 已建立GPU逐像素历史与细分块统计；`src/observation/`、`src/coverage/` 是后续跨宿主提取布局，当前逻辑按类独立位于宿主项目。
 - `src/pet/`、`src/effects/`、`src/assets/`：运动表现、局部效果和资源包加载。
 - `src/vision/`、`src/integrations/`：视觉模型与 API/任务监控适配器。
 - `contracts/`：接口和资源包的机器可校验 schema、兼容夹具。
@@ -64,4 +68,4 @@ AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬�
 
 当前没有项目客体或 VM；宿主源码检查点与实际验证结果见采集实施记录。未来选择 Hyper-V 时，消费共享父盘前须阅读其 README 与当前生命周期证据，核验密封状态、代次、只读属性、SHA-256 和有效期限。
 
-下一步接入静态区域统计与覆盖调度，消费已实现的 VPet 目标/局部黑幕接口与真实窗口回执；同时补齐采集持久显示身份/恢复；第二屏连接后执行实际多屏验收。生产采集复用开源引擎，自有 WGC 样例保持对照用途。日常发布尚未进行。
+下一步冻结静态识别夹具与阈值，测量全屏开销和打扰预算，补齐采集持久显示身份/恢复；第二屏连接后执行实际多屏验收。核心闭环集中工程审核待通道就绪后完成，G1保持待关闭。采集复用开源引擎，自有 WGC 样例保持对照用途。日常发布尚未进行。

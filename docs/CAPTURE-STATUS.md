@@ -10,6 +10,7 @@
 - `src/capture/windows_capture_adapter.py` 为薄层：身份/epoch、帧序列、消费回调与停止。WGC 捕获、线程、原生缓冲均由上游承担。
 - 原生 C++ WGC 代码是早期硬件对照样例，暂停扩写，不作为需长期自维护的生产后端。
 - `src/capture-rust` 已实际接通上游 `as_raw_texture()` / `device()` / `device_context()`：回调内复制至自有 GPU 纹理并用 EVENT 查询确认完成，无屏幕像素 CPU 读回。依赖由 Cargo.lock 固定，构建与 Clippy 零警告通过。
+- 新增 `observe` 统计消费者：同一上游纹理在GPU内计算逐像素静止历史和16×16细分块计数，主屏有界ROI只读回计数；已接入宿主调度和覆盖回执，详见 [CLOSED-LOOP](CLOSED-LOOP.md)。
 
 ## 实际验证与证据
 
@@ -30,7 +31,7 @@
 ## 当前限制
 
 1. 只有一块活动物理屏，真实多屏、混合DPI、跨显卡、插拔/休眠、旋转均待验证。
-2. Python公开接口映射GPU帧至CPU；Rust已验证GPU纹理复制消费，但静态统计shader、推理共享和生产服务生命周期尚未接通，不能称完整全GPU产品链。
+2. Python公开接口映射GPU帧至CPU；Rust GPU复制与静态统计shader已接通，当前统计限主屏有界ROI。推理共享和生产服务生命周期待实现，全屏性能尚未验收。
 3. 当前适配显示身份为session-only/枚举序号，完整稳定身份/拓扑epoch自动重建待接入。
 4. 原生样例使用FP16不等于实际HDR显示验收；HDR状态、色彩与映射待验证。
 5. 采集指示边框暂保持系统默认；其常驻亮区与无边框权限以后集中解决。
@@ -38,6 +39,6 @@
 
 ## 下一步
 
-继续补齐显示身份/生命周期，基于已接通的GPU纹理增加静态区域统计。第二显示器可用后运行 `tools/capture/verify.ps1 -Backend rust -MinimumDisplays 2` 并扩充拓扑/恢复矩阵。宠物主体已实际比较并选择VPet Core，依据见 HOST-SELECTION；接入局部黑幕及覆盖回执后推进垂直闭环。
+继续补齐显示身份/生命周期，测量现有GPU统计的全屏预算并扩充识别夹具。第二显示器可用后运行 `tools/capture/verify.ps1 -Backend rust -MinimumDisplays 2` 并扩充拓扑/恢复矩阵。VPet Core闭环已消费统计与实际黑幕回执，本地验证入口为 `tools/loop/verify.ps1`，当前边界见 CLOSED-LOOP。
 
 本记录随模块里程碑更新，原始运行证据按 data README 保留；研究与验收不能互相替代。

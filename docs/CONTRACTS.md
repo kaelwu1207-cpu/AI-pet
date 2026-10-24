@@ -34,7 +34,9 @@
 
 `FrameLease` 的 GPU 句柄仅在后端协商与安全 IPC 规则内使用。消费者必须主动归还；跨进程复制或共享会显式记录设备匹配、同步和成本。若帧过期/epoch 改变，消费者拒绝继续解释旧坐标。
 
-当前宿主局部实现：`MotionRequest`/`EffectRequest` 是单次计划的受信本地调用，未开放网络入口；唯一planId/完整幂等信封由后续M03/M08接入。`CoverageReceipt` 版本 `aipet.coverage/0.1` 包含实际矩形、单调观测时长、窗口像素毫秒、外部遮挡未知、撤除确认与工作进程退出码。缺失证据时零信用，计划持续时间不作为已完成覆盖。具体执行及验证边界见 HOST-INTEGRATION。
+当前宿主局部实现：`MotionRequest`/`EffectRequest` 是受信本地调用，闭环由M03分配唯一planId并去重回执；完整公共信封/跨版本schema由后续接口工作包接入。`CoverageReceipt` 版本 `aipet.coverage/0.1` 包含实际矩形、单调观测时长、窗口像素毫秒、外部遮挡未知、撤除确认与工作进程退出码。缺失证据时零信用，计划持续时间不作为已完成覆盖。具体执行及验证边界见 HOST-INTEGRATION。
+
+`ObservationFrame` 为当前主屏私有统计管道DTO：序列、100ns源时间、ROI、maskRevision、Healthy/GapReset和细分块计数。遮罩发送后必须等待对应代次的新鲜帧才启动移动/覆盖；帧只在本地固定显示会话内解释，完整显示身份/epoch信封仍待M01补齐。`StaticRegion` 的StableMs是受关注稳定内容时长特征；`OperationContext` 为禁入矩形/近期输入状态；公平账本登记实测窗口服务毫秒。新增类型在 `src/host/CoverageLogic.cs`，统计来源与限制见 [CLOSED-LOOP](CLOSED-LOOP.md)。当前未开放网络入口。
 
 ## 坐标与时间
 

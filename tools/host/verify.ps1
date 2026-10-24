@@ -35,7 +35,7 @@ function Run-Step([string]$name,[string[]]$arguments,[int]$timeout) {
 $failure=$null
 try {
     $build=Join-Path $root 'data\build\host-integration'
-    Run-Step 'build' @('build','tests/pet-hosts/host-integration.csproj','-c','Release','-o',$build,'-warnaserror') 60
+    Run-Step 'build' @('build','tests/pet-hosts/host-integration.csproj','-c','Release','-o',$build,'-warnaserror','-m:1') 60
     Run-Step 'integration' @("$build/host-integration.dll","$output/fixtures") 30
     Run-Step 'display' @("$build/AIpet.Host.dll",'--describe-display') 5
     $scope=Get-Content "$output/display.stdout.log" -Raw | ConvertFrom-Json

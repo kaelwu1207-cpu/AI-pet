@@ -1,5 +1,7 @@
 /data/
 **/bin/
+!/src/capture-rust/src/bin/
+!/src/capture-rust/src/bin/*.rs
 **/obj/
 **/node_modules/
 /.godot/

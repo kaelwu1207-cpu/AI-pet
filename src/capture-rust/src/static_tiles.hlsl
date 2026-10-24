@@ -25,14 +25,14 @@ void main(uint3 p : SV_DispatchThreadID, uint3 group : SV_GroupID, uint lane : S
             float3 color=saturate(Input.Load(int3(p.xy,0)).rgb);
             uint3 rgb=(uint3)round(color*255);
             uint3 prev=uint3(old.x&255,(old.x>>8)&255,(old.x>>16)&255);
-            bool changed=Reset!=0 || (old.x&0x80000000)!=0 || any(abs(int3(rgb)-int3(prev))>7);
-            uint age=changed?0:min(old.y+DeltaMs,3600000);
+            bool changed=Reset!=0 || (old.x&0x80000000)!=0 || any(abs(int3(rgb)-int3(prev))>PIXEL_DELTA);
+            uint age=changed?0:min(old.y+DeltaMs,AGE_CAP);
             History[index]=uint2(rgb.x|(rgb.y<<8)|(rgb.z<<16),age);
             float3 right=Input.Load(int3(min(p.x+1,Width-1),p.y,0)).rgb;
             float3 down=Input.Load(int3(p.x,min(p.y+1,Height-1),0)).rgb;
             float brightness=max(color.r,max(color.g,color.b));
             float3 diff=max(abs(color-right),abs(color-down));
-            bool edge=brightness>0.15 && max(diff.r,max(diff.g,diff.b))>0.2;
+            bool edge=brightness>EDGE_BRIGHTNESS && max(diff.r,max(diff.g,diff.b))>EDGE_CONTRAST;
             InterlockedAdd(Totals[0],1);
             InterlockedAdd(Totals[1],age>=ThresholdMs?1:0);
             InterlockedAdd(Totals[2],edge && age>=ThresholdMs?1:0);

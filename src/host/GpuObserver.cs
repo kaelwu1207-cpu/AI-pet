@@ -15,7 +15,7 @@ public sealed class GpuObserver : IAsyncDisposable
     public string? Failure {get;private set;}
     public int ExitCode {get;private set;}=-999;
     public ObservationFrame? Latest {get {lock(gate)return latest;}}
-    public bool Fresh => Latest!=null && Stopwatch.GetElapsedTime(Interlocked.Read(ref arrived)).TotalMilliseconds<600 && Failure==null && !process.HasExited;
+    public bool Fresh => Latest!=null && Stopwatch.GetElapsedTime(Interlocked.Read(ref arrived)).TotalMilliseconds<ObservationBaseline.FreshMs && Failure==null && !process.HasExited;
     public GpuObserver(string executable,PixelRect roi)
     {
         var info=new ProcessStartInfo(executable) {UseShellExecute=false,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true,CreateNoWindow=true};
@@ -27,7 +27,7 @@ public sealed class GpuObserver : IAsyncDisposable
     {
         try {
             while(await process.StandardOutput.ReadLineAsync().ConfigureAwait(false) is { } line) {
-                if(line.Length>2_000_000) throw new InvalidOperationException("Observation budget exceeded");
+                if(line.Length>16_000_000) throw new InvalidOperationException("Observation budget exceeded");
                 using var doc=JsonDocument.Parse(line);
                 if(doc.RootElement.TryGetProperty("Kind",out _)) continue;
                 var frame=JsonSerializer.Deserialize<ObservationFrame>(line) ?? throw new InvalidOperationException("Missing observation");

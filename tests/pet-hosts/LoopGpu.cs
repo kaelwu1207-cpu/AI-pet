@@ -21,13 +21,14 @@ static class LoopGpu
         var roi=new PixelRect(x,y,320,128);
         var canvas=new Canvas {Width=320,Height=128,Background=Brushes.Black,SnapsToDevicePixels=true};
         RenderOptions.SetEdgeMode(canvas,EdgeMode.Aliased);
-        foreach(int line in new[]{16,48,80,112,144,176,272,304}) {
-            var edge=new Rectangle {Width=1,Height=112,Fill=Brushes.White};Canvas.SetLeft(edge,line);Canvas.SetTop(edge,8);canvas.Children.Add(edge);
+        var definition=ObservationBaseline.Fixture;
+        foreach(var line in definition.GetProperty("LineXs").EnumerateArray()) {
+            var edge=new Rectangle {Width=1,Height=definition.GetProperty("LineHeight").GetInt32(),Fill=Brushes.White};Canvas.SetLeft(edge,line.GetInt32());Canvas.SetTop(edge,definition.GetProperty("LineY").GetInt32());canvas.Children.Add(edge);
         }
-        var cursor=new Rectangle {Width=2,Height=16,Fill=Brushes.White};Canvas.SetLeft(cursor,82);Canvas.SetTop(cursor,40);canvas.Children.Add(cursor);
-        var video=new Rectangle {Width=64,Height=128,Fill=Brushes.Red};Canvas.SetLeft(video,192);canvas.Children.Add(video);
-        var blink=new DispatcherTimer {Interval=TimeSpan.FromMilliseconds(180)};blink.Tick+=(_,_)=>cursor.Visibility=cursor.Visibility==Visibility.Visible?Visibility.Hidden:Visibility.Visible;
-        int color=0;var dynamicTimer=new DispatcherTimer {Interval=TimeSpan.FromMilliseconds(70)};
+        var cursor=new Rectangle {Width=definition.GetProperty("CursorWidth").GetInt32(),Height=definition.GetProperty("CursorHeight").GetInt32(),Fill=Brushes.White};Canvas.SetLeft(cursor,definition.GetProperty("CursorX").GetInt32());Canvas.SetTop(cursor,definition.GetProperty("CursorY").GetInt32());canvas.Children.Add(cursor);
+        var video=new Rectangle {Width=definition.GetProperty("DynamicWidth").GetInt32(),Height=128,Fill=Brushes.Red};Canvas.SetLeft(video,definition.GetProperty("DynamicX").GetInt32());canvas.Children.Add(video);
+        var blink=new DispatcherTimer {Interval=TimeSpan.FromMilliseconds(definition.GetProperty("BlinkMs").GetInt32())};blink.Tick+=(_,_)=>cursor.Visibility=cursor.Visibility==Visibility.Visible?Visibility.Hidden:Visibility.Visible;
+        int color=0;var dynamicTimer=new DispatcherTimer {Interval=TimeSpan.FromMilliseconds(definition.GetProperty("DynamicMs").GetInt32())};
         var colors=new[]{Brushes.Red,Brushes.Blue,Brushes.Green,Brushes.Yellow};dynamicTimer.Tick+=(_,_)=>video.Fill=colors[++color%colors.Length];
         var fixture=new Window {Width=320,Height=128,WindowStyle=WindowStyle.None,ResizeMode=ResizeMode.NoResize,ShowActivated=false,ShowInTaskbar=false,
             Content=new Viewbox {Stretch=Stretch.Fill,Child=canvas}};

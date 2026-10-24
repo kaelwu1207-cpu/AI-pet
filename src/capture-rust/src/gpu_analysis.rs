@@ -110,20 +110,27 @@ unsafe fn uav(
 }
 impl Analysis {
     pub fn new(frame: &Frame, roi: Rect) -> Result<Self, Error> {
+        Self::new_texture(frame.device(), frame.as_raw_texture(), roi)
+    }
+    pub fn new_texture(
+        device: &ID3D11Device,
+        source_texture: &ID3D11Texture2D,
+        roi: Rect,
+    ) -> Result<Self, Error> {
+        let baseline = crate::baseline::frozen();
         if roi.x < 0
             || roi.y < 0
             || roi.width == 0
             || roi.height == 0
-            || roi.width as u64 * roi.height as u64 > 1_048_576
+            || roi.width as u64 * roi.height as u64 > baseline.maximum_pixels
         {
-            return Err("ROI must contain 1..1048576 pixels on the primary display".into());
+            return Err("ROI exceeds the frozen pixel budget".into());
         }
-        let device = frame.device();
         // SAFETY: all resources are created on the upstream frame's device; borrowed surfaces
         // are used only inside the capture callback, output mappings only copy POD counts.
         unsafe {
             let mut desc = D3D11_TEXTURE2D_DESC::default();
-            frame.as_raw_texture().GetDesc(&mut desc);
+            source_texture.GetDesc(&mut desc);
             if roi.x as u64 + roi.width as u64 > desc.Width as u64
                 || roi.y as u64 + roi.height as u64 > desc.Height as u64
             {
@@ -141,7 +148,14 @@ impl Analysis {
             let texture = texture.ok_or("texture missing")?;
             let mut srv = None;
             device.CreateShaderResourceView(&texture, None, Some(&mut srv))?;
-            let source = include_bytes!("static_tiles.hlsl");
+            let source = format!(
+                "#define PIXEL_DELTA {}\n#define EDGE_BRIGHTNESS {}\n#define EDGE_CONTRAST {}\n#define AGE_CAP {}\n{}",
+                baseline.pixel_delta,
+                baseline.edge_brightness,
+                baseline.edge_contrast,
+                baseline.age_cap_ms,
+                include_str!("static_tiles.hlsl")
+            );
             let mut code = None;
             let mut errors: Option<ID3DBlob> = None;
             if let Err(error) = D3DCompile(
@@ -177,6 +191,12 @@ impl Analysis {
             let columns = roi.width.div_ceil(16);
             let rows = roi.height.div_ceil(16);
             let tiles = columns * rows;
+            let owned_bytes = roi.width as u64 * roi.height as u64 * 12
+                + tiles as u64 * 64
+                + std::mem::size_of::<Params>() as u64;
+            if owned_bytes > baseline.owned_gpu_budget_bytes {
+                return Err("Owned GPU allocation exceeds frozen budget".into());
+            }
             let state = buffer(device, roi.width * roi.height, 8, false)?;
             let output = buffer(device, tiles, 32, false)?;
             let staging = buffer(device, tiles, 32, true)?;
@@ -216,6 +236,22 @@ impl Analysis {
         reset: bool,
         masks: &[Rect],
     ) -> Result<Vec<serde_json::Value>, Error> {
+        self.observe_texture(
+            frame.device_context(),
+            frame.as_raw_texture(),
+            delta_ms,
+            reset,
+            masks,
+        )
+    }
+    pub fn observe_texture(
+        &self,
+        context: &ID3D11DeviceContext,
+        source_texture: &ID3D11Texture2D,
+        delta_ms: u32,
+        reset: bool,
+        masks: &[Rect],
+    ) -> Result<Vec<serde_json::Value>, Error> {
         if masks.len() > 16 {
             return Err("self-mask budget exceeded".into());
         }
@@ -227,7 +263,7 @@ impl Analysis {
                 delta_ms,
                 u32::from(reset),
                 masks.len() as u32,
-                500,
+                crate::baseline::frozen().stable_ms,
                 0,
             ],
             masks: [[0; 4]; 16],
@@ -240,10 +276,9 @@ impl Analysis {
                 mask.height as i32,
             ];
         }
-        let context = frame.device_context();
         unsafe {
             let mut shape = D3D11_TEXTURE2D_DESC::default();
-            frame.as_raw_texture().GetDesc(&mut shape);
+            source_texture.GetDesc(&mut shape);
             if (shape.Width, shape.Height, shape.Format.0) != self.source_shape {
                 return Err(
                     "Capture geometry or format changed; restart with a new topology epoch".into(),
@@ -263,7 +298,7 @@ impl Analysis {
                 0,
                 0,
                 0,
-                frame.as_raw_texture(),
+                source_texture,
                 0,
                 Some(&area),
             );

@@ -14,8 +14,8 @@ $shell=Join-Path $PSHOME 'pwsh.exe'
 $checkpoint=& git -c "safe.directory=$($root.Replace('\','/'))" rev-parse HEAD
 $upstream=& git -c "safe.directory=$($root.Replace('\','/'))/data/upstream/vpet" -C data/upstream/vpet rev-parse HEAD
 if($LASTEXITCODE -ne 0 -or $upstream -ne '0c2e795b8e81485e448675316ba088d5226d908d'){throw 'Upstream mismatch'}
-$sources=@(Get-ChildItem src/host,src/capture-rust,tests/pet-hosts,tools/loop,tools/capture,tools/host -Recurse -File |
-    Where-Object {$_.Extension -in '.cs','.csproj','.props','.rs','.hlsl','.toml','.lock','.py','.ps1'} |
+$sources=@(Get-ChildItem src/host,src/capture-rust,tests/pet-hosts,tools/loop,tools/capture,tools/host,contracts -Recurse -File |
+    Where-Object {$_.Extension -in '.cs','.csproj','.props','.rs','.hlsl','.toml','.lock','.py','.ps1','.json'} |
     ForEach-Object { @{path=$_.FullName;bytes=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName).Hash} })
 $steps=[Collections.Generic.List[object]]::new()
 function Step([string]$name,[string]$exe,[string[]]$arguments,[int]$seconds) {

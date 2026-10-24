@@ -63,7 +63,7 @@ impl GraphicsCaptureApiHandler for Capture {
         } else {
             ((stamp - self.last) / 10000) as u32
         };
-        let reset = self.last == 0 || delta > 1000;
+        let reset = self.last == 0 || delta > aipet_gpu_probe::baseline::frozen().gap_ms;
         self.last = stamp;
         if self.analysis.is_none() {
             self.analysis = Some(Analysis::new(frame, self.flags.roi)?);
@@ -126,7 +126,9 @@ fn run() -> Result<(), Error> {
         CursorCaptureSettings::WithoutCursor,
         DrawBorderSettings::Default,
         SecondaryWindowSettings::Default,
-        MinimumUpdateIntervalSettings::Custom(Duration::from_millis(120)),
+        MinimumUpdateIntervalSettings::Custom(Duration::from_millis(
+            aipet_gpu_probe::baseline::frozen().capture_interval_ms,
+        )),
         DirtyRegionSettings::Default,
         ColorFormat::Rgba8,
         Flags {

@@ -3,5 +3,7 @@
     <OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-  <ItemGroup><ProjectReference Include="../../data/upstream/vpet/VPet-Simulator.Core/VPet-Simulator.Core.csproj" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../../data/upstream/vpet/VPet-Simulator.Core/VPet-Simulator.Core.csproj" />
+    <EmbeddedResource Include="../../contracts/static-v1.json" LogicalName="AIpet.StaticBaseline" />
+  </ItemGroup>
 </Project>

@@ -31,14 +31,15 @@ public sealed class StaticMap
                 || t.LumaSum<0 || t.LumaSum>t.Visible*255))
             throw new ArgumentException("Invalid or nonmonotonic observation");
         sequence=frame.Sequence; timestamp=frame.Timestamp100ns;roi=frame.Roi;
-        int columns=(frame.Roi.Width+63)/64;
+        int size=ObservationBaseline.RegionSize;
+        int columns=(frame.Roi.Width+size-1)/size;
         var regions=new List<StaticRegion>();
-        foreach(var group in frame.Tiles.GroupBy(t=>((t.Y-frame.Roi.Y)/64)*columns+(t.X-frame.Roi.X)/64)) {
+        foreach(var group in frame.Tiles.GroupBy(t=>((t.Y-frame.Roi.Y)/size)*columns+(t.X-frame.Roi.X)/size)) {
             int gx=group.Key%columns,gy=group.Key/columns;
-            var bounds=new PixelRect(frame.Roi.X+gx*64,frame.Roi.Y+gy*64,Math.Min(64,frame.Roi.Width-gx*64),Math.Min(64,frame.Roi.Height-gy*64));
+            var bounds=new PixelRect(frame.Roi.X+gx*size,frame.Roi.Y+gy*size,Math.Min(size,frame.Roi.Width-gx*size),Math.Min(size,frame.Roi.Height-gy*size));
             int visible=group.Sum(t=>t.Visible),edges=group.Sum(t=>t.StableEdges);
             bool observable=frame.Healthy && group.Sum(t=>t.Masked)==0 && visible>0;
-            double age=edges>0?group.Max(t=>t.EdgeAgeMs):group.Sum(t=>t.StaticPixels)>=visible*0.95?group.Max(t=>t.MaxAgeMs):0;
+            double age=edges>0?group.Max(t=>t.EdgeAgeMs):group.Sum(t=>t.StaticPixels)>=visible*ObservationBaseline.MinimumStableFraction?group.Max(t=>t.MaxAgeMs):0;
             if(!observable) age=history.GetValueOrDefault(group.Key)?.StableMs ?? 0;
             var region=new StaticRegion(group.Key,bounds,age,observable,edges,visible>0?group.Sum(t=>t.LumaSum)/(visible*255.0):0);
             history[group.Key]=region; regions.Add(region);
@@ -55,7 +56,7 @@ public sealed class CoverageScheduler(int seed,string? displayId=null,long? topo
     public double WindowServiceMs(int regionId)=>serviceMs.GetValueOrDefault(regionId);
     public StaticRegion? Select(IEnumerable<StaticRegion> regions,OperationContext input,double nowMs)
     {
-        var candidates=regions.Where(r=>r.Observable && r.StableMs>=500 && (r.StableEdges>0 || r.Brightness>=0.05)
+        var candidates=regions.Where(r=>r.Observable && r.StableMs>=ObservationBaseline.StableMs && (r.StableEdges>0 || r.Brightness>=ObservationBaseline.MinimumBrightness)
             && !input.Blocks(r.Bounds) && retryAfter.GetValueOrDefault(r.Id)<=nowMs).ToArray();
         if(candidates.Length==0) return null;
         double least=candidates.Min(r=>WindowServiceMs(r.Id));

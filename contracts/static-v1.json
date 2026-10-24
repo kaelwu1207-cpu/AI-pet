@@ -1,0 +1,31 @@
+{
+  "Schema": "aipet.static-baseline/1",
+  "PixelDelta": 7,
+  "StableMs": 500,
+  "EdgeBrightness": 0.15,
+  "EdgeContrast": 0.2,
+  "AgeCapMs": 3600000,
+  "RegionSize": 64,
+  "MinimumBrightness": 0.05,
+  "MinimumStableFraction": 0.95,
+  "CaptureIntervalMs": 120,
+  "FreshMs": 600,
+  "GapMs": 1000,
+  "MaximumPixels": 16777216,
+  "OwnedGpuBudgetBytes": 268435456,
+  "Fixture": {
+    "Width": 320,
+    "Height": 128,
+    "LineXs": [16, 48, 80, 112, 144, 176, 272, 304],
+    "LineY": 8,
+    "LineHeight": 112,
+    "CursorX": 82,
+    "CursorY": 40,
+    "CursorWidth": 2,
+    "CursorHeight": 16,
+    "BlinkMs": 180,
+    "DynamicX": 192,
+    "DynamicWidth": 64,
+    "DynamicMs": 70
+  }
+}

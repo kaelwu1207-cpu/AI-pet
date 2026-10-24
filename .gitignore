@@ -1,0 +1,13 @@
+/data/
+**/bin/
+**/obj/
+**/node_modules/
+/.godot/
+/.vs/
+/.codegraph/
+.env
+.env.*
+*.user
+*.pfx
+*.pem
+*.key

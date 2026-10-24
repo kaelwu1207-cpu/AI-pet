@@ -6,5 +6,8 @@ AI-pet 维护，可运行测试定义随 Git 保留；第三方源码、私有�
 - `ESheepResourceProbe.cs`：编译引用 eSheep Portable 程序，原版 XML 解析器加载两套合成精灵表，验证真实宠物发布的帧。XML 重新加载创建新宠物实例，动画入口通过反射；这是需要薄层改造的证据。
 - `Directory.Build.props`：将验证程序中间输出集中到 data/build，避免与上游项目资产文件冲突。
 - `host-integration.csproj` / `HostIntegration.cs`：引用实际宿主，验证物理目标、取消、超时、资源解耦、被动窗口和局部效果生命周期；失败导致非零退出。
+- `probe_blackout.py`：通过已安装 windows-capture 从WGC帧内只检查自有测试窗口的黑幕内部与外围ROI，输出布尔结果、不保存画面。该测试使用CPU映射验证合成显示，生产采集仍走Rust原始纹理；当前限定单物理屏。
 
 执行入口为 tools/pet-hosts/verify.ps1。上游运动/子效果测试也被调用，失败保留真实退出码。单屏、合成资源、反射设置和人工鼠标体验的验证边界分别记录；不将局部接口通过视为完整主体或多屏验收。退役时先保留选择依据与必要回归。
+
+当前宿主整合使用 tools/host/verify.ps1，单独保留上游对照测试结果。跨进程 WindowFromPoint/WM_NCHITTEST 验证输入穿透，不移动用户鼠标或注入真实键鼠输入；原始前台句柄用于核对不抢焦点。故障覆盖宿主异常/被杀、心跳丢失、效果UI卡死和效果进程无回执退出。

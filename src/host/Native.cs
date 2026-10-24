@@ -31,10 +31,23 @@ public static class Native
             throw new System.ComponentModel.Win32Exception();
     }
     public static void Flush() { int result = DwmFlush(); if (result < 0) Marshal.ThrowExceptionForHR(result); }
+    public static void ValidateDisplay(DisplayScope scope)
+    {
+        var bounds=scope.Bounds;
+        var rect=new Rect { Left=bounds.X,Top=bounds.Y,Right=checked(bounds.X+bounds.Width),Bottom=checked(bounds.Y+bounds.Height) };
+        var monitor=MonitorFromRect(ref rect,0);
+        var info=new MonitorInfo { Size=Marshal.SizeOf<MonitorInfo>() };
+        if(monitor==IntPtr.Zero || !GetMonitorInfo(monitor,ref info)
+            || bounds != new PixelRect(info.Monitor.Left,info.Monitor.Top,info.Monitor.Right-info.Monitor.Left,info.Monitor.Bottom-info.Monitor.Top))
+            throw new ArgumentException("Display bounds no longer match an active physical monitor");
+    }
     [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
+    [StructLayout(LayoutKind.Sequential)] struct MonitorInfo { public int Size; public Rect Monitor,Work; public uint Flags; }
     [StructLayout(LayoutKind.Sequential)] public struct Point { public int X, Y; public Point(int x,int y) { X=x; Y=y; } }
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] public static extern int GetSystemMetrics(int index);
+    [DllImport("user32.dll")] static extern IntPtr MonitorFromRect(ref Rect rect,uint flags);
+    [DllImport("user32.dll",EntryPoint="GetMonitorInfoW")] static extern bool GetMonitorInfo(IntPtr monitor,ref MonitorInfo info);
     [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hwnd);
     [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr hwnd);
     [DllImport("user32.dll")] public static extern IntPtr WindowFromPoint(Point point);

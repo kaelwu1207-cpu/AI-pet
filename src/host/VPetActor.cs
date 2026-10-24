@@ -25,6 +25,7 @@ public sealed class VPetActor : IDisposable
     public TargetController Motion { get; }
     public string? SkinId => skin?.Id;
     public string? AnimationId => clip?.Id;
+    public string? CurrentPose => clip?.Steps[frame].Pose;
     public VPetActor(DisplayScope scope, PixelRect bounds, string cacheRoot)
     {
         GraphCore.CachePath = cacheRoot;
@@ -52,7 +53,7 @@ public sealed class VPetActor : IDisposable
     {
         if (next.Steps.Count is < 1 or > 128 || skin == null || next.Steps.Any(s => s.DurationMs is < 50 or > 5000 || !skin.Poses.ContainsKey(s.Pose)))
             throw new ArgumentException("Clip requires supported poses and bounded frame intervals");
-        clip=next; frame=0; ShowFrame(); animationTimer.Start();
+        clip=new(next.Id,next.Steps.ToArray()); frame=0; ShowFrame(); animationTimer.Start();
     }
     void ShowFrame()
     {
@@ -73,7 +74,7 @@ public sealed class TargetController(Window window, DisplayScope scope) : IContr
 {
     VPet_Simulator.Core.Main pet = null!;
     readonly DispatcherTimer deadlineTimer = new() { Interval=TimeSpan.FromMilliseconds(20) };
-    MotionRequest? request;
+    volatile MotionRequest? request;
     TaskCompletionSource<MotionReceipt>? completion;
     CancellationToken cancellation;
     long started, previous;

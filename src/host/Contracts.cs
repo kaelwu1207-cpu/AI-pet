@@ -13,7 +13,7 @@ public sealed record MotionRequest(string PlanId, string DisplayId, long Topolog
 {
     public void Validate(DisplayScope scope, int width, int height)
     {
-        if (string.IsNullOrWhiteSpace(PlanId) || DisplayId != scope.DisplayId || TopologyEpoch != scope.TopologyEpoch
+        if (string.IsNullOrWhiteSpace(PlanId) || PlanId.Length>128 || DisplayId != scope.DisplayId || TopologyEpoch != scope.TopologyEpoch
             || !double.IsFinite(PixelsPerSecond) || PixelsPerSecond is < 1 or > 2000 || DeadlineMs is < 50 or > 15000
             || !scope.Bounds.Contains(new(X, Y, width, height))) throw new ArgumentException("Invalid motion target, budget or topology");
     }
@@ -23,7 +23,7 @@ public sealed record EffectRequest(string PlanId, DisplayScope Display, PixelRec
 {
     public void Validate()
     {
-        if (string.IsNullOrWhiteSpace(PlanId) || string.IsNullOrWhiteSpace(Display.DisplayId) || Display.TopologyEpoch < 0
+        if (string.IsNullOrWhiteSpace(PlanId) || PlanId.Length>128 || string.IsNullOrWhiteSpace(Display.DisplayId) || Display.DisplayId.Length>256 || Display.TopologyEpoch < 0
             || !Display.Bounds.Contains(Bounds) || Bounds.Area > 640 * 640 || DurationMs is < 100 or > 5000 || EffectId != "blackout")
             throw new ArgumentException("Invalid local effect bounds, budget or capability");
     }
@@ -33,4 +33,4 @@ public sealed record OverlayReady(string Nonce, long Hwnd);
 public sealed record CoverageReceipt(string SchemaVersion, string PlanId, string DisplayId, long TopologyEpoch,
     PixelRect ActualBounds, long StartTicks, long LastObservedTicks, long ClockFrequency,
     double ObservedMs, double WindowPixelMs, string BlendMode, double Alpha, string EndReason,
-    bool RemovalConfirmed, bool FocusPreserved, string EvidenceLevel, string OcclusionStatus);
+    bool RemovalConfirmed, bool FocusPreserved, string EvidenceLevel, string OcclusionStatus, int? WorkerExitCode=null);

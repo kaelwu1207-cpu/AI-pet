@@ -39,9 +39,9 @@ public static class RecoveringLoop
             }
             LoopResult result;
             try {result=await ClosedLoop.RunAsync(plan,gpuExecutable,Path.Combine(output,"epochs",tracker.Epoch.ToString()),inputSource,trace,Create,true);}
-            catch(DisplayUnavailableException error) {result=new(0,0,0,0,Array.Empty<LoopAction>(),new(),-998,error.Message);}
+            catch(DisplayUnavailableException error) {result=new(0,0,0,0,Array.Empty<LoopAction>(),new(),null,error.Message);}
             bool healthy=result.GpuExitCode==0 && result.CaptureFailure==null;
-            phases.Add(new(tracker.Epoch,healthy?"completed":"capture-interrupted",result));actions+=result.Actions.Length;
+            phases.Add(new(tracker.Epoch,healthy?"completed":result.GpuExitCode==null?"startup-topology-changed":"capture-interrupted",result));actions+=result.Actions.Length;
             if(healthy){state="completed";break;}
             state="capture-interrupted";attempts++;tracker.Invalidate();await Task.Delay(150);
         }
@@ -50,7 +50,7 @@ public static class RecoveringLoop
         var last=phases.LastOrDefault()?.Result;
         var combined=new LoopResult(phases.Sum(p=>p.Result.Frames),phases.Sum(p=>p.Result.SelfMaskedFrames),phases.Sum(p=>p.Result.InputSamples),
             phases.Sum(p=>p.Result.AvoidedSelections),phases.SelectMany(p=>p.Result.Actions).ToArray(),last?.ObservedWindowServiceMs??new(),
-            last?.GpuExitCode??-999,state=="completed"?null:last?.CaptureFailure??state);
+            last?.GpuExitCode,state=="completed"?null:last?.CaptureFailure??state);
         await File.WriteAllTextAsync(Path.Combine(output,"loop-result.json"),JsonSerializer.Serialize(combined,new JsonSerializerOptions{WriteIndented=true}));
         if(state!="completed")throw new InvalidOperationException("Bounded recovery ended: "+state);
         return recovery;

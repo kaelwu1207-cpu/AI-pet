@@ -8,7 +8,7 @@ public sealed record LoopPlan(DisplayScope Display,PixelRect Roi,PixelRect PetBo
 public sealed record LoopAction(int RegionId,MotionReceipt Motion,CoverageReceipt? Coverage,double? AvoidanceLatencyMs,string? InterruptReason);
 public sealed record LoopEvent(string Phase,int RegionId,PixelRect Bounds);
 public sealed record LoopResult(long Frames,int SelfMaskedFrames,int InputSamples,int AvoidedSelections,
-    LoopAction[] Actions,Dictionary<int,double> ObservedWindowServiceMs,int GpuExitCode,string? CaptureFailure);
+    LoopAction[] Actions,Dictionary<int,double> ObservedWindowServiceMs,int? GpuExitCode,string? CaptureFailure);
 public static class ClosedLoop
 {
     static PixelRect Expanded(PixelRect r)=>new(r.X-48,r.Y-48,r.Width+96,r.Height+96);

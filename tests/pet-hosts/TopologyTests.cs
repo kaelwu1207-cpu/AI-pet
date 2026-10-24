@@ -19,5 +19,7 @@ static class TopologyTests
         Check(rejected,"ambiguous display identities are rejected");
         Check(RecoveringLoop.Rebase(new(100,100,320,128),a.Bounds,new(-1280,-100,1280,1024))==new PixelRect(-1180,0,320,128),"bounded ROI rebases into moved negative-coordinate displays");
         Check(RecoveringLoop.Rebase(a.Bounds,a.Bounds,b.Bounds)==b.Bounds,"full-screen observation follows the new display bounds");
+        var notStarted=new LoopResult(0,0,0,0,Array.Empty<LoopAction>(),new(),null,"startup-topology-changed");
+        Check(notStarted.GpuExitCode==null,"a capture that never started has no invented process exit code");
     }
 }

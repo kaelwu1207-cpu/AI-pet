@@ -44,6 +44,7 @@ static class RecoveryTests
         }
         var race=await RecoveringLoop.RunAsync(plan with{RunMs=8000,MaximumActions=1},executable,Path.Combine(output,"startup-race"),input,null,StartupRace);
         Check(race.State=="completed" && race.Phases.Length==2 && race.Phases[0].Result.Frames==0 && race.Phases[0].Result.Actions.Length==0
+            && race.Phases[0].Result.GpuExitCode==null && race.Phases[0].Status=="startup-topology-changed"
             && race.Phases[1].Result.Actions.Any(a=>a.Coverage?.RemovalConfirmed==true),"startup geometry race reacquires topology before producing coverage");
         Console.WriteLine("RECOVERY_SUMMARY "+JsonSerializer.Serialize(new{phases=result.Phases.Length,result.WaitingSamples,epochs=result.Phases.Select(p=>p.Epoch),sourceExits=result.Phases.Select(p=>p.Result.GpuExitCode),physicalDisplays=topology.Displays.Length,controlledTopology=true}));
     }

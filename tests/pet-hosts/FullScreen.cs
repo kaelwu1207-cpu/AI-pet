@@ -21,7 +21,9 @@ static class FullScreen
         timer.Tick+=(_,_)=>patch.Background=(change=!change)?Brushes.DarkBlue:Brushes.DarkGreen;timer.Start();
         string root=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../.."));
         int tileSize=args.Length>1?int.Parse(args[1]):16;
-        var source=new GpuObserver(Path.Combine(root,"data/build/capture-rust/debug/observe.exe"),roi,tileSize);
+        string rustProfile=args.Length>2?args[2]:"debug";
+        if(rustProfile is not ("debug" or "release"))throw new ArgumentException("Unknown Rust profile");
+        var source=new GpuObserver(Path.Combine(root,$"data/build/capture-rust/{rustProfile}/observe.exe"),roi,tileSize);
         var map=new StaticMap();var schedule=new CoverageScheduler(42);
         var wall=new List<double>();var gpu=new List<double>();var maps=new List<double>();var selections=new List<double>();
         var gaps=new List<double>();long sequence=0,lastStamp=0,privatePeak=0,workingPeak=0;ulong gpuPeak=0,nonLocalPeak=0,owned=0;string? adapter=null;int bytes=0,stale=0;
@@ -60,7 +62,7 @@ static class FullScreen
             fair.Apply("full-"+i,target,new("aipet.coverage/0.1","full-"+i,"full-grid",1,target.Bounds,0,100,1000,100,target.Bounds.Area*100,"opaque-black",1,"duration",true,true,"compositor-submitted-window-observed","unknown",0));
         }
         if(visits.Values.Max()-visits.Values.Min()>1)throw new Exception("Full-grid service fairness failed");
-        var result=new {Schema="aipet.full-screen-performance/1",Profile=ObservationBaseline.Schema,TileSize=tileSize,Roi=roi,Frames=wall.Count,Seconds=seconds,
+        var result=new {Schema="aipet.full-screen-performance/1",Profile=ObservationBaseline.Schema,RustProfile=rustProfile,TileSize=tileSize,Roi=roi,Frames=wall.Count,Seconds=seconds,
             AnalysisP95Ms=P95(wall),GpuP95Ms=P95(gpu),MapP95Ms=P95(maps),SelectionP95Ms=P95(selections),FrameGapP95Ms=P95(gaps),
             SourceCpuOneCorePercent=cpuMs/(seconds*10),HostCpuOneCorePercent=hostCpuMs/(seconds*10),LogicalProcessors=Environment.ProcessorCount,
             SourcePrivatePeakBytes=privatePeak,SourceWorkingPeakBytes=workingPeak,HostPrivatePeakBytes=hostPrivatePeak,HostWorkingPeakBytes=hostWorkingPeak,SourceHandlesPeak=handles,GpuLocalPeakBytes=gpuPeak,GpuNonLocalPeakBytes=nonLocalPeak,Adapter=adapter,OwnedGpuBytes=owned,

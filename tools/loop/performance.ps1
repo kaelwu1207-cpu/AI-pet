@@ -9,21 +9,22 @@ $env:NUGET_HTTP_CACHE_PATH="$root/data/cache/nuget-http";$env:TEMP="$root/data/t
 $dotnet="$root/data/toolchains/dotnet/dotnet.exe"
 $profile=Get-Content contracts/performance-v1.json -Raw|ConvertFrom-Json
 $checkpoint=& git -c "safe.directory=$($root.Replace('\','/'))" rev-parse HEAD
-$sources=@(Get-ChildItem src/host,src/capture-rust,contracts,tests/pet-hosts,tools/loop -Recurse -File |
+$sources=@(Get-ChildItem src/host,src/capture-rust,contracts,tests/pet-hosts,tools/loop,tools/capture -Recurse -File |
     Where-Object {$_.Extension -in '.rs','.hlsl','.cs','.csproj','.props','.toml','.lock','.json','.ps1'} |
     ForEach-Object {@{path=$_.FullName;sha256=(Get-FileHash -LiteralPath $_.FullName).Hash;bytes=$_.Length}})
 $steps=[Collections.Generic.List[object]]::new();$results=[Collections.Generic.List[object]]::new();$failure=$null
-function Step([string]$name,[string[]]$arguments,[int]$seconds) {
-    $p=Start-Process $dotnet -ArgumentList $arguments -WorkingDirectory $root -WindowStyle Hidden -PassThru -RedirectStandardOutput "$output/$name.stdout.log" -RedirectStandardError "$output/$name.stderr.log"
+function Step([string]$name,[string[]]$arguments,[int]$seconds,[string]$exe=$dotnet) {
+    $p=Start-Process $exe -ArgumentList $arguments -WorkingDirectory $root -WindowStyle Hidden -PassThru -RedirectStandardOutput "$output/$name.stdout.log" -RedirectStandardError "$output/$name.stderr.log"
     $timeout=-not $p.WaitForExit($seconds*1000)
     if($timeout){$p.Kill($true);$p.WaitForExit()};$p.Refresh()
     $steps.Add(@{name=$name;processId=$p.Id;exitCode=$p.ExitCode;timedOut=$timeout;exited=$p.HasExited})
     if($timeout -or $p.ExitCode -ne 0){throw "$name failed: exit=$($p.ExitCode), timeout=$timeout"}
 }
 try {
+    Step 'rust-release' @('-NoProfile','-File',"$root/tools/capture/build-rust.ps1",'-Release','-Test') 90 (Join-Path $PSHOME 'pwsh.exe')
     Step 'build' @('build','tests/pet-hosts/full-screen.csproj','-c','Release','-o',"$root/data/build/full-screen",'-warnaserror','-m:1','-nr:false','-p:UseSharedCompilation=false') 40
     for($index=1;$index -le $Runs;$index++) {
-        Step "run-$index" @("$root/data/build/full-screen/full-screen.dll","$output/run-$index",'64') 20
+        Step "run-$index" @("$root/data/build/full-screen/full-screen.dll","$output/run-$index",'64','release') 20
         $result=Get-Content "$output/run-$index/performance.json" -Raw|ConvertFrom-Json
         $violations=[Collections.Generic.List[string]]::new()
         foreach($metric in 'AnalysisP95Ms','GpuP95Ms','MapP95Ms','SelectionP95Ms','FrameGapP95Ms','SourcePrivatePeakBytes','HostPrivatePeakBytes','OwnedGpuBytes','StatisticReadbackBytesPerFrame') {
@@ -40,8 +41,9 @@ try {
 } catch {$failure=$_.ToString();Write-Output $failure}
 finally {
     $same=@($sources|Where-Object{(Get-FileHash -LiteralPath $_.path).Hash -ne $_.sha256}).Count -eq 0
+    $binaries=@("$root/data/build/capture-rust/release/observe.exe","$root/data/build/full-screen/full-screen.dll","$root/data/build/full-screen/AIpet.Host.dll")|ForEach-Object{if(Test-Path -LiteralPath $_){@{path=$_;sha256=(Get-FileHash -LiteralPath $_).Hash}}}
     @{schema='aipet.performance-verification/1';runId=$id;nonce=[guid]::NewGuid().ToString('N');checkpoint=$checkpoint;sourceFiles=$sources;sourceUnchanged=$same;
-        steps=$steps.ToArray();results=$results.ToArray();profile=$profile;error=$failure;physicalDisplaysExercised=1;pixelReadback=$false;pixelsPersisted=$false;
+        steps=$steps.ToArray();results=$results.ToArray();profile=$profile;binaries=@($binaries);error=$failure;physicalDisplaysExercised=1;pixelReadback=$false;pixelsPersisted=$false;
         completedUtc=[DateTime]::UtcNow.ToString('o')}|ConvertTo-Json -Depth 12|Set-Content "$output/receipt.json" -Encoding UTF8
     Write-Output "Receipt: $output/receipt.json"
 }

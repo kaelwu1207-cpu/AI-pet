@@ -39,3 +39,27 @@ GPU直接输入夹具由 `src/capture-rust/src/gpu_tests.rs` 定义，自有64×
 `tools/loop/performance.ps1` 使用C# Release与Rust release执行三轮，并运行相同的GPU真值测试。CPU原始数值为单核等效百分比，除以32才是参考机整机份额；工作集、私有内存、DXGI本进程local/nonlocal用量和自有资源字节分别记录。DXGI用量包含驱动/WGC所有权与驻留差异，不用其倒推每张纹理的实际显存。
 
 原始结果归data/receipts/performance，控制记录含源码检查点、配置/源码/程序指纹、退出码、超时及每项预算结果。短时结果不证明8小时无泄漏，不表示其他硬件或多屏功耗验收。开发优化对照使用Rust debug；正式参考预算结果单列Rust release，禁止混合编译模式计算加速比。
+
+## 当前实测结果
+
+已通过回执：`data/receipts/performance/0eb1f7b85f5d4bfea7cee652544581ce/receipt.json`，检查点 `2ee081d1ce948b914e0625392a5bbf79273a5104`，源码运行期间不变，release构建/Clippy/2项Rust测试及三轮测量全部退出0、无超时、预算违反0。
+
+| 指标 | 三轮范围 |
+|---|---|
+| 测量快照 | 50 / 50 / 50，过期0 |
+| GPU指令时间p95 | 0.237—0.259ms |
+| 统计处理墙钟p95 | 5.47—5.70ms |
+| 宿主聚合p95 / 选择p95 | 4.43—5.65ms / 2.48—2.65ms |
+| 源间隔p95 | 约127.23ms |
+| 采集CPU单核等效 / 整机份额 | 15.22—18.36% / 0.48—0.57% |
+| 消费/调度测试进程CPU单核等效 / 整机份额 | 63.54—68.28% / 1.99—2.13% |
+| 采集私有内存峰值 | 192.96—199.25MiB |
+| 消费/调度测试进程私有内存峰值 | 168.88—194.16MiB |
+| DXGI local峰值 / 自有GPU资源 | 180.61MiB / 126.73MiB |
+| 全屏网格公平性 | 2720区、2820次等长回执重放，访问差≤1 |
+
+CPU和内存数值属于统计/调度测试进程，包含采样器和小型WPF夹具，未加载正式宠物皮肤/完整动画。VPet实际动作与黑幕在独立整合回归中验证，完整桌宠常驻资源另测。
+
+开发模式优化对照：`baseline16-64af916b8bef4fc4b8cb38f78d897580/performance.json`（源码0db9280）与`coarse64-3441313910c240d4946799c659e72e5f/performance.json` 位于同一data/receipts/performance：16px→64px使分析p95从117.25ms降至8.98ms、每轮新鲜快照11→49、读回计数1382400→87040字节。它用于定位和证明输出聚合的收益，不替代上表release门禁。
+
+冻结输入SHA-256：static-v1为 `12af02534cfb412e224f0471d604c125c4ac14497f6b166f173fe10fd1395148`，performance-v1为 `9c1dccfc4f4eb4215fdf8dc60660659869194a0401f12bd45f159dd1da73051d`。contracts JSON的Git行尾固定为LF，以保持文件级指纹可重建。

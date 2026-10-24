@@ -2,7 +2,7 @@
 
 AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬、玩耍与局部魔法，间歇改变、遮挡或调暗长期静止的画面。后台根据静态暴露、实际覆盖时长和操作避让安排活动，前台保持自然、有性格的表现。
 
-当前阶段：**单主屏有界 ROI 的 GPU 静态识别→公平调度→VPet 定向移动→独立黑幕→实际回执反馈已连通，本地验证通过。** 固定细线、闪烁光标、自遮挡、覆盖公平性和受控操作避让已有证据；全屏、多屏和完整产品待验收。Git 元数据位于本目录 `.git`，初始文档提交为 `7c6c3bc05949f053abf40f7de952729371d4f5e4`。当前 Windows 仅枚举到一块活动显示器。当前执行与边界见 [闭环实现](docs/CLOSED-LOOP.md)、[采集实施记录](docs/CAPTURE-STATUS.md) 和 [主体选型实测](docs/HOST-SELECTION.md)。
+当前阶段：**识别夹具与阈值已冻结，5120×2160全屏GPU统计已驱动覆盖闭环，设备接口身份和有界拓扑恢复已接通。** 固定细线、闪烁、自遮挡、全屏网格公平性和采集重开已有本地证据；真实多屏、物理插拔与完整产品待验收。Git 元数据位于本目录 `.git`，初始文档提交为 `7c6c3bc05949f053abf40f7de952729371d4f5e4`。当前 Windows 仅枚举到一块活动显示器。执行与边界见 [识别及资源基线](docs/OBSERVATION-BASELINE.md)、[显示生命周期](docs/DISPLAY-LIFECYCLE.md) 和 [闭环实现](docs/CLOSED-LOOP.md)。
 
 ## 文档入口与权威顺序
 
@@ -19,12 +19,15 @@ AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬�
 | [docs/HOST-SELECTION.md](docs/HOST-SELECTION.md) | VPet/eSheep 实际运动、资源与效果验证；主体改装决策 |
 | [docs/HOST-INTEGRATION.md](docs/HOST-INTEGRATION.md) | 当前宿主整合、运行入口、实际覆盖回执和异常撤除验证 |
 | [docs/CLOSED-LOOP.md](docs/CLOSED-LOOP.md) | GPU 静态历史、遮罩代次、公平调度、操作避让与闭环证据 |
+| [docs/OBSERVATION-BASELINE.md](docs/OBSERVATION-BASELINE.md) | 冻结识别参数/真值夹具、全屏统计与资源预算 |
+| [docs/DISPLAY-LIFECYCLE.md](docs/DISPLAY-LIFECYCLE.md) | 显示器设备接口身份、负坐标、拓扑代次与有界恢复 |
+| [contracts/README.md](contracts/README.md) | 机器定义与冻结基线的用途、维护和版本规则 |
 | [THIRD-PARTY.md](THIRD-PARTY.md) | 已采用组件及版本；`requirements-capture.txt` 锁定验证环境依赖 |
 | [LICENSE](LICENSE)、[NOTICE](NOTICE) | 项目自有源码/文档采用 Apache-2.0；维护版权与第三方许可边界，随分发保留 |
 
 用户最新明确指令与全局/上级目录规则优先。产品目标由 PRODUCT 维护；计划执行由 PLAN 维护；接口和资源包分别由 CONTRACTS、ASSET-PACKS 维护。冲突应显式修订相关文档后继续，文件名和修改时间不改变权威角色。
 
-项目已获所有者公开开源授权，自有源码/文档采用 Apache-2.0。公开仓库为 [kaelwu1207-cpu/AI-pet](https://github.com/kaelwu1207-cpu/AI-pet)，当前开发分支为 `feature/reuse-integration`；GitHub 作为本地Git检查点的协作镜像。本地验证源码检查点为 `a349679a871fdacd8305d268fefbf925e1cbe1ca`，后续文档检查点沿同一分支维护。源码镜像不包含本地data、第三方研究副本、凭据、画面或正式安装包。
+项目已获所有者公开开源授权，自有源码/文档采用 Apache-2.0。公开仓库为 [kaelwu1207-cpu/AI-pet](https://github.com/kaelwu1207-cpu/AI-pet)，当前开发分支为 `feature/reuse-integration`；GitHub 作为本地Git检查点的协作镜像。当前源码验证基线为 `2ee081d`，后续文档检查点沿同一分支维护。源码镜像不包含本地data、第三方研究副本、凭据、画面或正式安装包。
 
 ## 项目根与数据角色登记
 
@@ -54,7 +57,7 @@ AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬�
 - `src/capture-rust/` 已建立GPU逐像素历史与细分块统计；`src/observation/`、`src/coverage/` 是后续跨宿主提取布局，当前逻辑按类独立位于宿主项目。
 - `src/pet/`、`src/effects/`、`src/assets/`：运动表现、局部效果和资源包加载。
 - `src/vision/`、`src/integrations/`：视觉模型与 API/任务监控适配器。
-- `contracts/`：接口和资源包的机器可校验 schema、兼容夹具。
+- `contracts/` 已建立：识别夹具/阈值与参考资源门禁机器定义；完整消息和资源包schema按接口工作包补齐。
 - `assets/`：具有明确授权、可随程序分发的自有或第三方资源；用户导入包位于相应数据根。
 - `tests/`：针对契约、算法、渲染和整合行为的测试定义；真实画面测试输入归数据输入角色。
 - `tools/hyperv/`：可选隔离控制定义，当前不存在；本项目已获宿主开发豁免。
@@ -68,4 +71,4 @@ AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬�
 
 当前没有项目客体或 VM；宿主源码检查点与实际验证结果见采集实施记录。未来选择 Hyper-V 时，消费共享父盘前须阅读其 README 与当前生命周期证据，核验密封状态、代次、只读属性、SHA-256 和有效期限。
 
-下一步冻结静态识别夹具与阈值，测量全屏开销和打扰预算，补齐采集持久显示身份/恢复；第二屏连接后执行实际多屏验收。核心闭环集中工程审核待通道就绪后完成，G1保持待关闭。采集复用开源引擎，自有 WGC 样例保持对照用途。日常发布尚未进行。
+下一步扩充真实工作场景标注和打扰预算，验证长时间常驻及显示插拔/休眠；第二屏连接后执行实际多屏验收。核心闭环集中工程审核待通道就绪后完成，G1保持待关闭。采集复用开源引擎，自有 WGC 样例保持对照用途。日常发布尚未进行。

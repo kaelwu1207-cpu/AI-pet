@@ -36,7 +36,9 @@
 
 当前宿主局部实现：`MotionRequest`/`EffectRequest` 是受信本地调用，闭环由M03分配唯一planId并去重回执；完整公共信封/跨版本schema由后续接口工作包接入。`CoverageReceipt` 版本 `aipet.coverage/0.1` 包含实际矩形、单调观测时长、窗口像素毫秒、外部遮挡未知、撤除确认与工作进程退出码。缺失证据时零信用，计划持续时间不作为已完成覆盖。具体执行及验证边界见 HOST-INTEGRATION。
 
-`ObservationFrame` 为当前主屏私有统计管道DTO：序列、100ns源时间、ROI、maskRevision、Healthy/GapReset和细分块计数。遮罩发送后必须等待对应代次的新鲜帧才启动移动/覆盖；帧只在本地固定显示会话内解释，完整显示身份/epoch信封仍待M01补齐。`StaticRegion` 的StableMs是受关注稳定内容时长特征；`OperationContext` 为禁入矩形/近期输入状态；公平账本登记实测窗口服务毫秒。新增类型在 `src/host/CoverageLogic.cs`，统计来源与限制见 [CLOSED-LOOP](CLOSED-LOOP.md)。当前未开放网络入口。
+`ObservationFrame` 为当前私有统计管道DTO：序列、100ns源时间、ROI、DisplayId/TopologyEpoch、maskRevision、Healthy/GapReset、16/64px计数及性能字段。遮罩发送后须等待对应代次的新鲜帧才启动移动/覆盖，宿主拒绝身份/epoch/ROI不匹配的帧。完整公共信封仍由接口工作包补齐。`StaticRegion` 的StableMs是受关注稳定内容时长特征；`OperationContext` 为禁入矩形/近期输入状态；公平账本登记实测窗口服务毫秒。新增类型在 `src/host/CoverageLogic.cs`，来源与限制见 [CLOSED-LOOP](CLOSED-LOOP.md)。当前未开放网络入口。
+
+`NativeTopology` / `NativeDisplay` 是Windows元数据适配输出；设备接口身份与可变GDI映射分开。`TopologyTracker` 拥有当前epoch，`RecoveringLoop` 拥有阶段生命周期；旧流/效果/账本关闭后，新流以新代次开始。`RecoveryRun` 保留每阶段实际结果和等待次数，原有loop-result兼容消费者保留汇总。消息、阈值与硬件验收口径分别见 DISPLAY-LIFECYCLE 和 OBSERVATION-BASELINE。
 
 ## 坐标与时间
 

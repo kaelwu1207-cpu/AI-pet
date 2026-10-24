@@ -31,14 +31,14 @@
 ## 当前限制
 
 1. 只有一块活动物理屏，真实多屏、混合DPI、跨显卡、插拔/休眠、旋转均待验证。
-2. Python公开接口映射GPU帧至CPU；Rust GPU复制与静态统计shader已接通，当前统计限主屏有界ROI。推理共享和生产服务生命周期待实现，全屏性能尚未验收。
-3. 当前适配显示身份为session-only/枚举序号，完整稳定身份/拓扑epoch自动重建待接入。
+2. Python公开接口映射GPU帧至CPU；Rust统计已覆盖5120×2160全屏，64px输出只读回计数，推理共享和长期生产服务生命周期待完成。阈值、夹具及资源结果见 OBSERVATION-BASELINE。
+3. Rust消费者已通过设备接口路径解析指定显示器，帧绑定身份/epoch，拓扑变化和采集错误可有界重开。当前身份稳定范围、克隆源限制和真实硬件缺口见 DISPLAY-LIFECYCLE；旧Python桥仍为session-only。
 4. 原生样例使用FP16不等于实际HDR显示验收；HDR状态、色彩与映射待验证。
 5. 采集指示边框暂保持系统默认；其常驻亮区与无边框权限以后集中解决。
 6. 完整 C01/G0/G2 未通过，当前完成上游Python采集与Rust原始GPU纹理消费切片。
 
 ## 下一步
 
-继续补齐显示身份/生命周期，测量现有GPU统计的全屏预算并扩充识别夹具。第二显示器可用后运行 `tools/capture/verify.ps1 -Backend rust -MinimumDisplays 2` 并扩充拓扑/恢复矩阵。VPet Core闭环已消费统计与实际黑幕回执，本地验证入口为 `tools/loop/verify.ps1`，当前边界见 CLOSED-LOOP。
+扩充实际显示插拔/休眠、长期资源和工作场景矩阵。第二显示器可用后运行 `tools/capture/verify.ps1 -Backend rust -MinimumDisplays 2`，再验证指定设备身份的多路统计与恢复。VPet Core闭环入口为 `tools/loop/verify.ps1`，资源入口为 `tools/loop/performance.ps1`；当前边界见 CLOSED-LOOP / OBSERVATION-BASELINE / DISPLAY-LIFECYCLE。
 
 本记录随模块里程碑更新，原始运行证据按 data README 保留；研究与验收不能互相替代。

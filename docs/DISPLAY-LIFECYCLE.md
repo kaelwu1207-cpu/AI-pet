@@ -30,6 +30,10 @@ Rust `topology.rs` 通过QueryDisplayConfig取得活动路径，用DisplayConfig
 
 当前只有一块活动物理显示器。真实双屏/混合DPI/跨显卡/旋转、拔插/休眠恢复、HDR色彩和长期常驻仍须硬件矩阵验收。500ms拓扑轮询与操作避让延迟分开计量，单次受控操作测量不能解释为物理热插拔的延迟保证。
 
+原生拓扑入口实测1屏、5120×2160、DPI144/150%；相同设备重复枚举身份一致。真实WGC重开阶段退出4→0、受控等待2次。启动几何竞态阶段记录startup-topology-changed、零帧/零动作且进程退出码为空；下一阶段正常采集并产生实际回执。最终验证身份和清理记录由 CLOSED-LOOP 维护。
+
+元数据入口为 `observe.exe --topology` 或 `AIpet.Host --describe-topology <observe.exe>`。运行计划可使用稳定DisplayId；兼容的session-primary在协调器入口解析一次并固定目标，后续主屏切换不会悄悄改选另一台设备。
+
 ## 上游和API依据
 
 - [windows-capture Monitor API](https://docs.rs/windows-capture/2.0.1/windows_capture/monitor/struct.Monitor.html)：枚举、设备名和原始Monitor映射。

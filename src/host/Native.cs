@@ -41,11 +41,33 @@ public static class Native
             || bounds != new PixelRect(info.Monitor.Left,info.Monitor.Top,info.Monitor.Right-info.Monitor.Left,info.Monitor.Bottom-info.Monitor.Top))
             throw new ArgumentException("Display bounds no longer match an active physical monitor");
     }
+    public static OperationContext ReadOperationContext()
+    {
+        if(!GetCursorPos(out var point)) return new(Array.Empty<PixelRect>(),true);
+        var exclusions=new List<PixelRect> {new(point.X-80,point.Y-80,160,160)};
+        var last=new LastInput {Size=(uint)Marshal.SizeOf<LastInput>()};
+        bool recent=!GetLastInputInfo(ref last) || unchecked((uint)Environment.TickCount-last.Time)<300;
+        uint thread=GetWindowThreadProcessId(GetForegroundWindow(),out _);
+        var info=new GuiInfo {Size=Marshal.SizeOf<GuiInfo>()};
+        if(thread!=0 && GetGUIThreadInfo(thread,ref info) && info.Caret!=IntPtr.Zero) {
+            var caret=new Point(info.CaretRect.Left,info.CaretRect.Top);
+            if(ClientToScreen(info.Caret,ref caret)) exclusions.Add(new(caret.X-24,caret.Y-24,
+                Math.Max(1,info.CaretRect.Right-info.CaretRect.Left)+48,Math.Max(1,info.CaretRect.Bottom-info.CaretRect.Top)+48));
+        }
+        return new(exclusions.ToArray(),recent);
+    }
     [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
     [StructLayout(LayoutKind.Sequential)] struct MonitorInfo { public int Size; public Rect Monitor,Work; public uint Flags; }
+    [StructLayout(LayoutKind.Sequential)] struct LastInput { public uint Size,Time; }
+    [StructLayout(LayoutKind.Sequential)] struct GuiInfo {public int Size,Flags; public IntPtr Active,Focus,Capture,MenuOwner,MoveSize,Caret;public Rect CaretRect;}
     [StructLayout(LayoutKind.Sequential)] public struct Point { public int X, Y; public Point(int x,int y) { X=x; Y=y; } }
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] public static extern int GetSystemMetrics(int index);
+    [DllImport("user32.dll")] static extern bool GetCursorPos(out Point point);
+    [DllImport("user32.dll")] static extern bool GetLastInputInfo(ref LastInput input);
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr window,out uint process);
+    [DllImport("user32.dll")] static extern bool GetGUIThreadInfo(uint thread,ref GuiInfo info);
+    [DllImport("user32.dll")] static extern bool ClientToScreen(IntPtr window,ref Point point);
     [DllImport("user32.dll")] static extern IntPtr MonitorFromRect(ref Rect rect,uint flags);
     [DllImport("user32.dll",EntryPoint="GetMonitorInfoW")] static extern bool GetMonitorInfo(IntPtr monitor,ref MonitorInfo info);
     [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hwnd);

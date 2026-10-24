@@ -7,14 +7,19 @@ public sealed record HostPlan(DisplayScope Display,PixelRect PetBounds,SkinDefin
     MotionRequest Motion,EffectRequest Effect);
 public static class HostRun
 {
-    public static async Task ExecuteAsync(HostPlan plan,string output)
+    public static string ResolveOutput(string output,string resultName)
     {
         // The development build lives in data/build/<host>; all mutable runtime files stay in data.
         string dataRoot=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../.."));
         output=Path.GetFullPath(output);
         if(!output.StartsWith(dataRoot+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("Run output must be inside the declared project data root");
-        if(File.Exists(Path.Combine(output,"run-result.json"))) throw new ArgumentException("Use a fresh run output directory");
+        if(File.Exists(Path.Combine(output,resultName))) throw new ArgumentException("Use a fresh run output directory");
+        return output;
+    }
+    public static async Task ExecuteAsync(HostPlan plan,string output)
+    {
+        output=ResolveOutput(output,"run-result.json");
         Native.ValidateDisplay(plan.Display);
         if(plan.Effect.Display!=plan.Display || !plan.Display.Bounds.Contains(plan.PetBounds)) throw new ArgumentException("Plan scope mismatch");
         plan.Motion.Validate(plan.Display,plan.PetBounds.Width,plan.PetBounds.Height); plan.Effect.Validate();

@@ -14,6 +14,11 @@ public static class Program
                 var plan=System.Text.Json.JsonSerializer.Deserialize<HostPlan>(System.IO.File.ReadAllText(args[1])) ?? throw new ArgumentException("Missing plan");
                 return HostRun.RunDispatcher(()=>HostRun.ExecuteAsync(plan,args[2]));
             }
+            if(args.Length==4 && args[0]=="--closed-loop") {
+                if(new System.IO.FileInfo(args[1]).Length>65536) throw new ArgumentException("Loop plan exceeds 64 KiB");
+                var plan=System.Text.Json.JsonSerializer.Deserialize<LoopPlan>(System.IO.File.ReadAllText(args[1])) ?? throw new ArgumentException("Missing loop plan");
+                return HostRun.RunDispatcher(async ()=> {await ClosedLoop.RunAsync(plan,args[2],args[3]);});
+            }
             if(args.Length==1 && args[0] is "--owner-test" or "--owner-test-throw") {
                 var request=System.Text.Json.JsonSerializer.Deserialize<EffectRequest>(Console.ReadLine() ?? "") ?? throw new ArgumentException("Missing fixture request");
                 return HostRun.RunDispatcher(async ()=> {

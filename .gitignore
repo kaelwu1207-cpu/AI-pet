@@ -11,3 +11,5 @@
 *.pfx
 *.pem
 *.key
+**/__pycache__/
+*.pyc

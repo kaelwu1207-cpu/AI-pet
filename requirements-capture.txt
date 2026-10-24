@@ -1,0 +1,4 @@
+# Verified wheel environment; production GPU-texture integration uses the upstream Rust API.
+windows-capture==2.0.1
+numpy==2.5.4
+opencv-python==5.0.0.93

@@ -15,6 +15,9 @@ public sealed class GpuObserver : IAsyncDisposable
     public string? Failure {get;private set;}
     public int ExitCode {get;private set;}=-999;
     public ObservationFrame? Latest {get {lock(gate)return latest;}}
+    public (double CpuMs,long PrivateBytes,long WorkingSet,int Handles) Counters() {
+        process.Refresh();return(process.TotalProcessorTime.TotalMilliseconds,process.PrivateMemorySize64,process.WorkingSet64,process.HandleCount);
+    }
     public bool Fresh => Latest!=null && Stopwatch.GetElapsedTime(Interlocked.Read(ref arrived)).TotalMilliseconds<ObservationBaseline.FreshMs && Failure==null && !process.HasExited;
     public GpuObserver(string executable,PixelRect roi)
     {

@@ -13,3 +13,4 @@ AI-pet 维护，可运行测试定义随 Git 保留；第三方源码、私有�
 当前宿主整合使用 tools/host/verify.ps1，单独保留上游对照测试结果。跨进程 WindowFromPoint/WM_NCHITTEST 验证输入穿透，不移动用户鼠标或注入真实键鼠输入；原始前台句柄用于核对不抢焦点。故障覆盖宿主异常/被杀、心跳丢失、效果UI卡死和效果进程无回执退出。
 
 `LoopLogic.cs` / `loop-logic.csproj` 验证静态事实冻结、测量回执一致性/去重、公平分配和操作禁入。`LoopGpu.cs` / `loop-gpu.csproj` 在真实窗口生成1物理像素细线、闪烁文本光标和动态色块，通过Rust GPU统计验证时长，再执行VPet/黑幕/回执闭环。操作测试注入策略区域，保留真实鼠标/caret空间禁入，受控回放近期输入位；纯逻辑另测近期输入暂停。外部JSON入口使用完整原生操作策略。执行及回执入口为 tools/loop/verify.ps1；输入引起的暂停/取消保留实际原因。测试不注入系统键鼠事件。
+`FullScreen.cs` / `full-screen.csproj` 测量真实全屏统计与宿主聚合/调度延迟，并以同等实际服务时长回执验证全屏网格公平性。原始结果进入data/receipts/performance；只保存性能与计数。GPU时间由D3D时间戳查询取得，CPU按单核等效百分比表达，显存计数与自有资源字节分别记录。工具及夹具随模块维护。

@@ -4,9 +4,12 @@ use windows::{
     Win32::Graphics::{
         Direct3D::{Fxc::D3DCompile, ID3DBlob},
         Direct3D11::*,
-        Dxgi::Common::DXGI_FORMAT_UNKNOWN,
+        Dxgi::{
+            Common::DXGI_FORMAT_UNKNOWN, DXGI_MEMORY_SEGMENT_GROUP_LOCAL,
+            DXGI_QUERY_VIDEO_MEMORY_INFO, IDXGIAdapter3, IDXGIDevice,
+        },
     },
-    core::s,
+    core::{Interface, s},
 };
 use windows_capture::frame::Frame;
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -49,6 +52,8 @@ pub struct Analysis {
     columns: u32,
     rows: u32,
     source_shape: (u32, u32, i32),
+    timestamps: [ID3D11Query; 3],
+    owned_bytes: u64,
 }
 unsafe fn buffer(
     device: &ID3D11Device,
@@ -213,6 +218,17 @@ impl Analysis {
                 None,
                 Some(&mut params),
             )?;
+            let query = |kind| -> Result<ID3D11Query, Error> {
+                let mut q = None;
+                device.CreateQuery(
+                    &D3D11_QUERY_DESC {
+                        Query: kind,
+                        MiscFlags: 0,
+                    },
+                    Some(&mut q),
+                )?;
+                Ok(q.ok_or("Query missing")?)
+            };
             Ok(Self {
                 roi,
                 texture,
@@ -226,6 +242,12 @@ impl Analysis {
                 columns,
                 rows,
                 source_shape,
+                timestamps: [
+                    query(D3D11_QUERY_TIMESTAMP_DISJOINT)?,
+                    query(D3D11_QUERY_TIMESTAMP)?,
+                    query(D3D11_QUERY_TIMESTAMP)?,
+                ],
+                owned_bytes,
             })
         }
     }
@@ -284,6 +306,8 @@ impl Analysis {
                     "Capture geometry or format changed; restart with a new topology epoch".into(),
                 );
             }
+            context.Begin(&self.timestamps[0]);
+            context.End(&self.timestamps[1]);
             let area = D3D11_BOX {
                 left: self.roi.x as u32,
                 top: self.roi.y as u32,
@@ -322,6 +346,8 @@ impl Analysis {
             context.Dispatch(self.columns, self.rows, 1);
             context.CSSetUnorderedAccessViews(0, 2, Some([None, None].as_ptr()), None);
             context.CSSetShaderResources(0, Some(&[None]));
+            context.End(&self.timestamps[2]);
+            context.End(&self.timestamps[0]);
             context.CopyResource(&self.staging, &self.output);
             let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
             context.Map(&self.staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped))?;
@@ -337,6 +363,48 @@ impl Analysis {
                     "Visible":c.visible,"StaticPixels":c.stable,"StableEdges":c.edges,"MaxAgeMs":c.max_age,"EdgeAgeMs":c.edge_age,
                     "Changed":c.changed,"LumaSum":c.luma,"Masked":c.masked})
             }).collect())
+        }
+    }
+    pub fn metrics(&self, frame: &Frame) -> Result<serde_json::Value, Error> {
+        unsafe {
+            let context = frame.device_context();
+            let mut disjoint = D3D11_QUERY_DATA_TIMESTAMP_DISJOINT::default();
+            let mut begin = 0u64;
+            let mut end = 0u64;
+            context.GetData(
+                &self.timestamps[0],
+                Some((&mut disjoint as *mut D3D11_QUERY_DATA_TIMESTAMP_DISJOINT).cast()),
+                std::mem::size_of_val(&disjoint) as u32,
+                0,
+            )?;
+            context.GetData(
+                &self.timestamps[1],
+                Some((&mut begin as *mut u64).cast()),
+                8,
+                0,
+            )?;
+            context.GetData(
+                &self.timestamps[2],
+                Some((&mut end as *mut u64).cast()),
+                8,
+                0,
+            )?;
+            let gpu_ms = if !disjoint.Disjoint.as_bool() && disjoint.Frequency > 0 && end >= begin {
+                Some((end - begin) as f64 * 1000.0 / disjoint.Frequency as f64)
+            } else {
+                None
+            };
+            let memory = (|| -> windows::core::Result<u64> {
+                let dxgi: IDXGIDevice = frame.device().cast()?;
+                let adapter: IDXGIAdapter3 = dxgi.GetAdapter()?.cast()?;
+                let mut info = DXGI_QUERY_VIDEO_MEMORY_INFO::default();
+                adapter.QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &mut info)?;
+                Ok(info.CurrentUsage)
+            })()
+            .ok();
+            Ok(
+                serde_json::json!({"GpuMs":gpu_ms,"GpuLocalMemoryBytes":memory,"OwnedGpuBytes":self.owned_bytes}),
+            )
         }
     }
 }

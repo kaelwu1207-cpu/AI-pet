@@ -27,6 +27,11 @@ struct Masks {
 #[serde(rename_all = "PascalCase")]
 struct Config {
     roi: Rect,
+    #[serde(default = "default_duration")]
+    duration_ms: u64,
+}
+fn default_duration() -> u64 {
+    15000
 }
 #[derive(Clone)]
 struct Flags {
@@ -74,18 +79,21 @@ impl GraphicsCaptureApiHandler for Capture {
             .lock()
             .map_err(|_| "mask lock poisoned")?
             .clone();
+        let started = Instant::now();
         let tiles = self.analysis.as_ref().unwrap().observe(
             frame,
             if reset { 0 } else { delta },
             reset,
             &masks.masks,
         )?;
+        let wall_ms = started.elapsed().as_secs_f64() * 1000.0;
+        let metrics = self.analysis.as_ref().unwrap().metrics(frame)?;
         let sequence = self.flags.frames.fetch_add(1, Ordering::SeqCst) + 1;
         println!(
             "{}",
             serde_json::json!({"Sequence":sequence,"Timestamp100ns":stamp,"MaskRevision":masks.revision,
             "Roi":self.flags.roi,"Tiles":tiles,"Healthy":true,"GapReset":reset,"PixelReadback":false,
-            "StatisticReadbackBytes":tiles.len()*32})
+            "StatisticReadbackBytes":tiles.len()*32,"AnalysisWallMs":wall_ms,"Performance":metrics})
         );
         io::stdout().flush()?;
         Ok(())
@@ -98,6 +106,9 @@ fn run() -> Result<(), Error> {
         return Err("Configuration budget exceeded".into());
     }
     let config: Config = serde_json::from_str(&first)?;
+    if !(1000..=30000).contains(&config.duration_ms) {
+        return Err("Duration budget 1..30 seconds".into());
+    }
     let stop = Arc::new(AtomicBool::new(false));
     let masks = Arc::new(Mutex::new(Masks::default()));
     let frames = Arc::new(AtomicU64::new(0));
@@ -141,7 +152,7 @@ fn run() -> Result<(), Error> {
     let start = Instant::now();
     while !stop.load(Ordering::SeqCst)
         && !control.is_finished()
-        && start.elapsed() < Duration::from_secs(15)
+        && start.elapsed() < Duration::from_millis(config.duration_ms)
     {
         thread::sleep(Duration::from_millis(20));
     }

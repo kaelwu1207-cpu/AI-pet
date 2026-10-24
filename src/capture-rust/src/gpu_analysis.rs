@@ -6,7 +6,8 @@ use windows::{
         Direct3D11::*,
         Dxgi::{
             Common::DXGI_FORMAT_UNKNOWN, DXGI_MEMORY_SEGMENT_GROUP_LOCAL,
-            DXGI_QUERY_VIDEO_MEMORY_INFO, IDXGIAdapter3, IDXGIDevice,
+            DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL, DXGI_QUERY_VIDEO_MEMORY_INFO, IDXGIAdapter3,
+            IDXGIDevice,
         },
     },
     core::{Interface, s},
@@ -54,6 +55,7 @@ pub struct Analysis {
     source_shape: (u32, u32, i32),
     timestamps: [ID3D11Query; 3],
     owned_bytes: u64,
+    tile_size: u32,
 }
 unsafe fn buffer(
     device: &ID3D11Device,
@@ -122,6 +124,20 @@ impl Analysis {
         source_texture: &ID3D11Texture2D,
         roi: Rect,
     ) -> Result<Self, Error> {
+        Self::new_texture_tiled(device, source_texture, roi, 16)
+    }
+    pub fn new_tiled(frame: &Frame, roi: Rect, tile_size: u32) -> Result<Self, Error> {
+        Self::new_texture_tiled(frame.device(), frame.as_raw_texture(), roi, tile_size)
+    }
+    pub fn new_texture_tiled(
+        device: &ID3D11Device,
+        source_texture: &ID3D11Texture2D,
+        roi: Rect,
+        tile_size: u32,
+    ) -> Result<Self, Error> {
+        if ![16, 64].contains(&tile_size) {
+            return Err("Output tile must be 16 or 64".into());
+        }
         let baseline = crate::baseline::frozen();
         if roi.x < 0
             || roi.y < 0
@@ -193,8 +209,8 @@ impl Analysis {
                 None,
                 Some(&mut shader),
             )?;
-            let columns = roi.width.div_ceil(16);
-            let rows = roi.height.div_ceil(16);
+            let columns = roi.width.div_ceil(tile_size);
+            let rows = roi.height.div_ceil(tile_size);
             let tiles = columns * rows;
             let owned_bytes = roi.width as u64 * roi.height as u64 * 12
                 + tiles as u64 * 64
@@ -248,6 +264,7 @@ impl Analysis {
                     query(D3D11_QUERY_TIMESTAMP)?,
                 ],
                 owned_bytes,
+                tile_size,
             })
         }
     }
@@ -286,7 +303,7 @@ impl Analysis {
                 u32::from(reset),
                 masks.len() as u32,
                 crate::baseline::frozen().stable_ms,
-                0,
+                self.tile_size,
             ],
             masks: [[0; 4]; 16],
         };
@@ -358,8 +375,8 @@ impl Analysis {
             .to_vec();
             context.Unmap(&self.staging, 0);
             Ok(counts.iter().enumerate().map(|(index,c)| {
-                let x=index as u32%self.columns*16;let y=index as u32/self.columns*16;
-                serde_json::json!({"X":self.roi.x+x as i32,"Y":self.roi.y+y as i32,"Width":16.min(self.roi.width-x),"Height":16.min(self.roi.height-y),
+                let x=index as u32%self.columns*self.tile_size;let y=index as u32/self.columns*self.tile_size;
+                serde_json::json!({"X":self.roi.x+x as i32,"Y":self.roi.y+y as i32,"Width":self.tile_size.min(self.roi.width-x),"Height":self.tile_size.min(self.roi.height-y),
                     "Visible":c.visible,"StaticPixels":c.stable,"StableEdges":c.edges,"MaxAgeMs":c.max_age,"EdgeAgeMs":c.edge_age,
                     "Changed":c.changed,"LumaSum":c.luma,"Masked":c.masked})
             }).collect())
@@ -394,16 +411,21 @@ impl Analysis {
             } else {
                 None
             };
-            let memory = (|| -> windows::core::Result<u64> {
+            let memory = (|| -> windows::core::Result<serde_json::Value> {
                 let dxgi: IDXGIDevice = frame.device().cast()?;
                 let adapter: IDXGIAdapter3 = dxgi.GetAdapter()?.cast()?;
                 let mut info = DXGI_QUERY_VIDEO_MEMORY_INFO::default();
                 adapter.QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &mut info)?;
-                Ok(info.CurrentUsage)
+                let mut shared=DXGI_QUERY_VIDEO_MEMORY_INFO::default();
+                adapter.QueryVideoMemoryInfo(0,DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL,&mut shared)?;
+                let desc=adapter.GetDesc()?;
+                let name=String::from_utf16_lossy(&desc.Description[..desc.Description.iter().position(|c|*c==0).unwrap_or(desc.Description.len())]);
+                Ok(serde_json::json!({"Local":info.CurrentUsage,"NonLocal":shared.CurrentUsage,"Adapter":name}))
             })()
             .ok();
             Ok(
-                serde_json::json!({"GpuMs":gpu_ms,"GpuLocalMemoryBytes":memory,"OwnedGpuBytes":self.owned_bytes}),
+                serde_json::json!({"GpuMs":gpu_ms,"GpuLocalMemoryBytes":memory.as_ref().map(|m|&m["Local"]),
+                    "GpuNonLocalMemoryBytes":memory.as_ref().map(|m|&m["NonLocal"]),"Adapter":memory.as_ref().map(|m|&m["Adapter"]),"OwnedGpuBytes":self.owned_bytes}),
             )
         }
     }

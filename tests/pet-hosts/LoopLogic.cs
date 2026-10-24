@@ -4,6 +4,10 @@ static class LoopLogic
     static void Check(bool value,string name) { if(!value) throw new Exception(name); Console.WriteLine("PASS "+name); }
     static int Main()
     {
+        try { Run();return 0; }catch(Exception error){Console.Error.WriteLine(error);return 1;}
+    }
+    static void Run()
+    {
         var model=new StaticMap();
         var tile=new GpuTile(0,0,16,16,256,255,16,900,900,1,65000,0);
         model.Accept(new(1,1000000,1,new(0,0,16,16),new[]{tile},true,false));
@@ -32,6 +36,8 @@ static class LoopLogic
         invalid=false;try{bounded.Apply("bad-time",region,receipt with{PlanId="bad-time",ObservedMs=500});}catch(ArgumentException){invalid=true;}
         Check(invalid,"planned or inconsistent time cannot replace measured duration");
         Check(Geometry.Intersects(Geometry.Swept(new(0,0,20,20),new(100,100,20,20)),new(50,50,10,10)),"operation avoidance checks swept path as well as destination");
-        Console.WriteLine("RESULT loop logic passed"); return 0;
+        invalid=false;try{new StaticMap().Accept(new(1,1000,0,new(0,0,32,16),new[]{tile,tile},true,false));}catch(ArgumentException){invalid=true;}
+        Check(invalid,"duplicate GPU tiles cannot inflate full-grid counts");
+        Console.WriteLine("RESULT loop logic passed");
     }
 }

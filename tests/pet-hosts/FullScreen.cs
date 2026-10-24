@@ -20,11 +20,12 @@ static class FullScreen
         var timer=new DispatcherTimer {Interval=TimeSpan.FromMilliseconds(120)};bool change=false;
         timer.Tick+=(_,_)=>patch.Background=(change=!change)?Brushes.DarkBlue:Brushes.DarkGreen;timer.Start();
         string root=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../.."));
-        var source=new GpuObserver(Path.Combine(root,"data/build/capture-rust/debug/observe.exe"),roi);
+        int tileSize=args.Length>1?int.Parse(args[1]):16;
+        var source=new GpuObserver(Path.Combine(root,"data/build/capture-rust/debug/observe.exe"),roi,tileSize);
         var map=new StaticMap();var schedule=new CoverageScheduler(42);
         var wall=new List<double>();var gpu=new List<double>();var maps=new List<double>();var selections=new List<double>();
-        var gaps=new List<double>();long sequence=0,lastStamp=0,privatePeak=0,workingPeak=0;ulong gpuPeak=0,owned=0;int bytes=0,stale=0;
-        double cpuMs=0,hostCpuMs=0,seconds=0;int handles=0;
+        var gaps=new List<double>();long sequence=0,lastStamp=0,privatePeak=0,workingPeak=0;ulong gpuPeak=0,nonLocalPeak=0,owned=0;string? adapter=null;int bytes=0,stale=0;
+        double cpuMs=0,hostCpuMs=0,seconds=0;int handles=0;long hostPrivatePeak=0,hostWorkingPeak=0;
         using var host=Process.GetCurrentProcess();
         try {
             await source.WaitMasksAsync(source.SetMasks());await Task.Delay(1000);
@@ -35,12 +36,14 @@ static class FullScreen
                     sequence=frame.Sequence;wall.Add(frame.AnalysisWallMs);
                     if(frame.Performance?.GpuMs is {} value)gpu.Add(value);
                     gpuPeak=Math.Max(gpuPeak,frame.Performance?.GpuLocalMemoryBytes??0);owned=frame.Performance?.OwnedGpuBytes??0;bytes=frame.StatisticReadbackBytes;
+                    nonLocalPeak=Math.Max(nonLocalPeak,frame.Performance?.GpuNonLocalMemoryBytes??0);adapter=frame.Performance?.Adapter;
                     if(lastStamp!=0)gaps.Add((frame.Timestamp100ns-lastStamp)/10000.0);lastStamp=frame.Timestamp100ns;
                     var step=Stopwatch.StartNew();map.Accept(frame);maps.Add(step.Elapsed.TotalMilliseconds);
                     step.Restart();schedule.Select(map.Regions,new(Array.Empty<PixelRect>(),false),watch.Elapsed.TotalMilliseconds);selections.Add(step.Elapsed.TotalMilliseconds);
                 }
                 if(!source.Fresh)stale++;
                 var counters=source.Counters();privatePeak=Math.Max(privatePeak,counters.PrivateBytes);workingPeak=Math.Max(workingPeak,counters.WorkingSet);handles=Math.Max(handles,counters.Handles);
+                host.Refresh();hostPrivatePeak=Math.Max(hostPrivatePeak,host.PrivateMemorySize64);hostWorkingPeak=Math.Max(hostWorkingPeak,host.WorkingSet64);
                 if(source.Failure!=null)throw new InvalidOperationException(source.Failure);
                 await Task.Delay(20);
             }
@@ -57,10 +60,10 @@ static class FullScreen
             fair.Apply("full-"+i,target,new("aipet.coverage/0.1","full-"+i,"full-grid",1,target.Bounds,0,100,1000,100,target.Bounds.Area*100,"opaque-black",1,"duration",true,true,"compositor-submitted-window-observed","unknown",0));
         }
         if(visits.Values.Max()-visits.Values.Min()>1)throw new Exception("Full-grid service fairness failed");
-        var result=new {Schema="aipet.full-screen-performance/1",Profile=ObservationBaseline.Schema,Roi=roi,Frames=wall.Count,Seconds=seconds,
+        var result=new {Schema="aipet.full-screen-performance/1",Profile=ObservationBaseline.Schema,TileSize=tileSize,Roi=roi,Frames=wall.Count,Seconds=seconds,
             AnalysisP95Ms=P95(wall),GpuP95Ms=P95(gpu),MapP95Ms=P95(maps),SelectionP95Ms=P95(selections),FrameGapP95Ms=P95(gaps),
             SourceCpuOneCorePercent=cpuMs/(seconds*10),HostCpuOneCorePercent=hostCpuMs/(seconds*10),LogicalProcessors=Environment.ProcessorCount,
-            SourcePrivatePeakBytes=privatePeak,SourceWorkingPeakBytes=workingPeak,SourceHandlesPeak=handles,GpuLocalPeakBytes=gpuPeak,OwnedGpuBytes=owned,
+            SourcePrivatePeakBytes=privatePeak,SourceWorkingPeakBytes=workingPeak,HostPrivatePeakBytes=hostPrivatePeak,HostWorkingPeakBytes=hostWorkingPeak,SourceHandlesPeak=handles,GpuLocalPeakBytes=gpuPeak,GpuNonLocalPeakBytes=nonLocalPeak,Adapter=adapter,OwnedGpuBytes=owned,
             StatisticReadbackBytesPerFrame=bytes,StaleSamples=stale,FullGridRegions=fairRegions.Length,FairnessIterations=iterations,FairSelectionP95Ms=P95(fairTimes),VisitSpread=visits.Values.Max()-visits.Values.Min(),
             GpuExitCode=source.ExitCode,PixelReadback=false,PixelsPersisted=false};
         await File.WriteAllTextAsync(Path.Combine(output,"performance.json"),JsonSerializer.Serialize(result,new JsonSerializerOptions{WriteIndented=true}));

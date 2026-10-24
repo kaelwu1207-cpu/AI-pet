@@ -27,8 +27,13 @@ struct Masks {
 #[serde(rename_all = "PascalCase")]
 struct Config {
     roi: Rect,
+    #[serde(default = "default_tile")]
+    tile_size: u32,
     #[serde(default = "default_duration")]
     duration_ms: u64,
+}
+fn default_tile() -> u32 {
+    16
 }
 fn default_duration() -> u64 {
     15000
@@ -36,6 +41,7 @@ fn default_duration() -> u64 {
 #[derive(Clone)]
 struct Flags {
     roi: Rect,
+    tile_size: u32,
     masks: Arc<Mutex<Masks>>,
     frames: Arc<AtomicU64>,
 }
@@ -71,7 +77,11 @@ impl GraphicsCaptureApiHandler for Capture {
         let reset = self.last == 0 || delta > aipet_gpu_probe::baseline::frozen().gap_ms;
         self.last = stamp;
         if self.analysis.is_none() {
-            self.analysis = Some(Analysis::new(frame, self.flags.roi)?);
+            self.analysis = Some(Analysis::new_tiled(
+                frame,
+                self.flags.roi,
+                self.flags.tile_size,
+            )?);
         }
         let masks = self
             .flags
@@ -93,7 +103,7 @@ impl GraphicsCaptureApiHandler for Capture {
             "{}",
             serde_json::json!({"Sequence":sequence,"Timestamp100ns":stamp,"MaskRevision":masks.revision,
             "Roi":self.flags.roi,"Tiles":tiles,"Healthy":true,"GapReset":reset,"PixelReadback":false,
-            "StatisticReadbackBytes":tiles.len()*32,"AnalysisWallMs":wall_ms,"Performance":metrics})
+            "StatisticReadbackBytes":tiles.len()*32,"TileSize":self.flags.tile_size,"AnalysisWallMs":wall_ms,"Performance":metrics})
         );
         io::stdout().flush()?;
         Ok(())
@@ -144,6 +154,7 @@ fn run() -> Result<(), Error> {
         ColorFormat::Rgba8,
         Flags {
             roi: config.roi,
+            tile_size: config.tile_size,
             masks,
             frames: Arc::clone(&frames),
         },

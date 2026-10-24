@@ -19,11 +19,11 @@ public sealed class GpuObserver : IAsyncDisposable
         process.Refresh();return(process.TotalProcessorTime.TotalMilliseconds,process.PrivateMemorySize64,process.WorkingSet64,process.HandleCount);
     }
     public bool Fresh => Latest!=null && Stopwatch.GetElapsedTime(Interlocked.Read(ref arrived)).TotalMilliseconds<ObservationBaseline.FreshMs && Failure==null && !process.HasExited;
-    public GpuObserver(string executable,PixelRect roi)
+    public GpuObserver(string executable,PixelRect roi,int tileSize=16)
     {
         var info=new ProcessStartInfo(executable) {UseShellExecute=false,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true,CreateNoWindow=true};
         process=Process.Start(info) ?? throw new InvalidOperationException("GPU observer failed to start");
-        process.StandardInput.WriteLine(JsonSerializer.Serialize(new {Roi=roi}));
+        process.StandardInput.WriteLine(JsonSerializer.Serialize(new {Roi=roi,TileSize=tileSize}));
         errors=process.StandardError.ReadToEndAsync(); reader=ReadAsync();
     }
     async Task ReadAsync()

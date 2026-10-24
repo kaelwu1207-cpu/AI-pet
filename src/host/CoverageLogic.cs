@@ -2,8 +2,8 @@ namespace AIpet.Host;
 public sealed record GpuTile(int X,int Y,int Width,int Height,int Visible,int StaticPixels,int StableEdges,
     int MaxAgeMs,int EdgeAgeMs,int Changed,int LumaSum,int Masked);
 public sealed record ObservationFrame(long Sequence,long Timestamp100ns,int MaskRevision,PixelRect Roi,
-    GpuTile[] Tiles,bool Healthy,bool GapReset,double AnalysisWallMs=0,GpuPerformance? Performance=null,int StatisticReadbackBytes=0);
-public sealed record GpuPerformance(double? GpuMs,ulong? GpuLocalMemoryBytes,ulong OwnedGpuBytes);
+    GpuTile[] Tiles,bool Healthy,bool GapReset,double AnalysisWallMs=0,GpuPerformance? Performance=null,int StatisticReadbackBytes=0,int TileSize=16);
+public sealed record GpuPerformance(double? GpuMs,ulong? GpuLocalMemoryBytes,ulong OwnedGpuBytes,ulong? GpuNonLocalMemoryBytes=null,string? Adapter=null);
 public sealed record StaticRegion(int Id,PixelRect Bounds,double StableMs,bool Observable,int StableEdges,double Brightness);
 public sealed record OperationContext(PixelRect[] Exclusions,bool RecentInput)
 {
@@ -25,8 +25,12 @@ public sealed class StaticMap
     public IReadOnlyList<StaticRegion> Regions {get;private set;}=Array.Empty<StaticRegion>();
     public void Accept(ObservationFrame frame)
     {
-        if(frame.Sequence<=sequence || frame.Timestamp100ns<=timestamp || frame.Tiles.Length>65536 || (roi!=null && roi!=frame.Roi)
-            || frame.Tiles.Any(t=>!frame.Roi.Contains(new(t.X,t.Y,t.Width,t.Height)) || t.Width is <1 or >16 || t.Height is <1 or >16
+        if(frame.Sequence<=sequence || frame.Timestamp100ns<=timestamp || frame.Tiles.Length>65536 || frame.TileSize is not (16 or 64) || (roi!=null && roi!=frame.Roi)
+            || frame.Tiles.Length!=((frame.Roi.Width+frame.TileSize-1)/frame.TileSize)*((frame.Roi.Height+frame.TileSize-1)/frame.TileSize)
+            || frame.Tiles.Select(t=>(t.X,t.Y)).Distinct().Count()!=frame.Tiles.Length
+            || frame.Tiles.Any(t=>(t.X-frame.Roi.X)%frame.TileSize!=0 || (t.Y-frame.Roi.Y)%frame.TileSize!=0
+                || t.Width!=Math.Min(frame.TileSize,frame.Roi.X+frame.Roi.Width-t.X) || t.Height!=Math.Min(frame.TileSize,frame.Roi.Y+frame.Roi.Height-t.Y))
+            || frame.Tiles.Any(t=>!frame.Roi.Contains(new(t.X,t.Y,t.Width,t.Height)) || t.Width<1 || t.Width>frame.TileSize || t.Height<1 || t.Height>frame.TileSize
                 || t.Visible<0 || t.Masked<0 || t.Visible+t.Masked!=t.Width*t.Height || t.StaticPixels<0 || t.StaticPixels>t.Visible
                 || t.StableEdges<0 || t.StableEdges>t.Visible || t.Changed<0 || t.Changed>t.Visible || t.MaxAgeMs<0 || t.EdgeAgeMs<0
                 || t.LumaSum<0 || t.LumaSum>t.Visible*255))

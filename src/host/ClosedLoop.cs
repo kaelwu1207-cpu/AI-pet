@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace AIpet.Host;
 public sealed record LoopPlan(DisplayScope Display,PixelRect Roi,PixelRect PetBounds,SkinDefinition Skin,AnimationClip Animation,
-    int RunMs=10000,int MaximumActions=4,int EffectMs=240,int Seed=42);
+    int RunMs=10000,int MaximumActions=4,int EffectMs=240,int Seed=42,int OutputTileSize=64,PixelRect? TargetBounds=null);
 public sealed record LoopAction(int RegionId,MotionReceipt Motion,CoverageReceipt? Coverage,double? AvoidanceLatencyMs,string? InterruptReason);
 public sealed record LoopEvent(string Phase,int RegionId,PixelRect Bounds);
 public sealed record LoopResult(long Frames,int SelfMaskedFrames,int InputSamples,int AvoidedSelections,
@@ -16,14 +16,15 @@ public static class ClosedLoop
         Func<OperationContext>? inputSource=null,Action<LoopEvent>? trace=null)
     {
         if(plan.RunMs is < 1000 or > 12000 || plan.MaximumActions is < 1 or > 8 || plan.EffectMs is < 100 or > 1000
-            || !plan.Display.Bounds.Contains(plan.Roi) || plan.Roi.Area>1048576 || !plan.Display.Bounds.Contains(plan.PetBounds))
+            || !plan.Display.Bounds.Contains(plan.Roi) || plan.Roi.Area>ObservationBaseline.MaximumPixels || !plan.Display.Bounds.Contains(plan.PetBounds)
+            || plan.OutputTileSize is not (16 or 64) || (plan.TargetBounds!=null && !plan.Roi.Contains(plan.TargetBounds)))
             throw new ArgumentException("Invalid bounded loop plan");
         Native.ValidateDisplay(plan.Display);
         output=HostRun.ResolveOutput(output,"loop-result.json");
         Directory.CreateDirectory(output);
         using var actor=new VPetActor(plan.Display,plan.PetBounds,Path.Combine(output,"cache"));
         actor.SetSkin(plan.Skin);actor.Play(plan.Animation);
-        var source=new GpuObserver(gpuExecutable,plan.Roi);
+        var source=new GpuObserver(gpuExecutable,plan.Roi,plan.OutputTileSize);
         var map=new StaticMap();var scheduler=new CoverageScheduler(plan.Seed,plan.Display.DisplayId,plan.Display.TopologyEpoch);
         var actions=new List<LoopAction>();long sequence=0;int maskedFrames=0,inputSamples=0,avoided=0;
         var elapsed=Stopwatch.StartNew();
@@ -39,7 +40,7 @@ public static class ClosedLoop
                 Observe();
                 if(!source.Fresh) {await Task.Delay(30);continue;}
                 var context=Input();
-                var region=scheduler.Select(map.Regions,context,elapsed.Elapsed.TotalMilliseconds);
+                var region=scheduler.Select(map.Regions.Where(r=>plan.TargetBounds==null || plan.TargetBounds.Contains(r.Bounds)),context,elapsed.Elapsed.TotalMilliseconds);
                 if(region==null) {avoided++;await Task.Delay(30);continue;}
                 // Cast from beside the target, so the pet body does not replace the observed target.
                 var body=Native.Bounds(Native.Handle(actor.Window));

@@ -1,0 +1,21 @@
+{
+  "Schema": "aipet.performance-budget/1",
+  "StaticBaseline": "aipet.static-baseline/1",
+  "OutputTileSize": 64,
+  "ReferencePixels": 11059200,
+  "WarmupMs": 1000,
+  "MeasureMs": 6000,
+  "MinimumFrames": 35,
+  "AnalysisP95Ms": 25,
+  "GpuP95Ms": 5,
+  "MapP95Ms": 10,
+  "SelectionP95Ms": 5,
+  "FrameGapP95Ms": 250,
+  "SourceCpuMachinePercent": 2,
+  "HostCpuMachinePercent": 3,
+  "SourcePrivatePeakBytes": 402653184,
+  "HostPrivatePeakBytes": 536870912,
+  "OwnedGpuBytes": 268435456,
+  "StatisticReadbackBytesPerFrame": 131072,
+  "MaximumStaleSamples": 0
+}

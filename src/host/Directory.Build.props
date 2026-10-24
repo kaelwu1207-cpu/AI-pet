@@ -1,0 +1,3 @@
+<Project><PropertyGroup>
+  <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\..\data\build\host-obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+</PropertyGroup></Project>

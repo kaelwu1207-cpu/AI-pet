@@ -2,6 +2,7 @@
   "Schema": "aipet.resident-budget/1",
   "ReferencePixels": 11059200,
   "ActionIntervalMs": 5000,
+  "CaptureRestartSilenceMs": 10000,
   "WarmupSeconds": 120,
   "ReferenceMeasurementSeconds": 600,
   "LongStabilitySeconds": 28800,

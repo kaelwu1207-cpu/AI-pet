@@ -101,7 +101,7 @@ public sealed class ResidentHost : IAsyncDisposable
         BoundedAppend("metrics.jsonl",JsonSerializer.Serialize(new{Schema="aipet.resident-metrics/1",Utc=DateTime.UtcNow,Snapshot,SourcePid=source.ProcessId,HostCpuMs=p.TotalProcessorTime.TotalMilliseconds,
             HostPrivateBytes=p.PrivateMemorySize64,HostWorkingSet=p.WorkingSet64,HostHandles=p.HandleCount,
             SourceCpuMs=c.CpuMs,SourcePrivateBytes=c.PrivateBytes,SourceWorkingSet=c.WorkingSet,SourceHandles=c.Handles,
-            AnalysisMs=f?.AnalysisWallMs,Gpu=f?.Performance,Fresh=source.Fresh,SourceTotalCpuMs=captureCpuMs+c.CpuMs,
+            AnalysisMs=f?.AnalysisWallMs,Gpu=f?.Performance,Fresh=source.Fresh,ObservationAgeMs=source.ObservationAgeMs,SourceTotalCpuMs=captureCpuMs+c.CpuMs,
             EffectTotalCpuMs=effectCpuMs,EffectPrivatePeakBytes=effectPrivatePeak,EffectHandlesPeak=effectHandlesPeak}),8_388_608);WriteStatus();
     }
     void BoundedAppend(string name,string text,long limit)

@@ -15,6 +15,7 @@ public sealed class GpuObserver : IAsyncDisposable
     ObservationFrame? latest;
     ObservationFrame? first;
     long arrived;
+    readonly long started=Stopwatch.GetTimestamp();
     int revision;
     public string? Failure {get;private set;}
     public int ExitCode {get;private set;}=-999;
@@ -26,7 +27,8 @@ public sealed class GpuObserver : IAsyncDisposable
     public (double CpuMs,long PrivateBytes,long WorkingSet,int Handles) Counters() {
         process.Refresh();return(process.TotalProcessorTime.TotalMilliseconds,process.PrivateMemorySize64,process.WorkingSet64,process.HandleCount);
     }
-    public bool Fresh => Latest!=null && Stopwatch.GetElapsedTime(Interlocked.Read(ref arrived)).TotalMilliseconds<ObservationBaseline.FreshMs && Failure==null && !process.HasExited;
+    public double ObservationAgeMs=>Stopwatch.GetElapsedTime(Interlocked.Read(ref arrived) is var value && value!=0?value:started).TotalMilliseconds;
+    public bool Fresh => Latest!=null && ObservationAgeMs<ObservationBaseline.FreshMs && Failure==null && !process.HasExited;
     readonly PixelRect roi;
     readonly DisplayScope? scope;
     public GpuObserver(string executable,PixelRect roi,int tileSize=16,DisplayScope? scope=null,string? expectedSignature=null,bool resident=false)

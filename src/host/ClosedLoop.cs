@@ -52,7 +52,10 @@ public static class ClosedLoop
                 Observe();
                 if(!source.Fresh) {
                     if(source.HasExited)break;
-                    if(elapsed.ElapsedMilliseconds>1000)throw new GpuUnavailableException("GPU observations stalled");
+                    // An unchanged WGC desktop need not deliver frames. Stop dispatch immediately
+                    // at FreshMs; keep the healthy session for a separate resident recovery grace.
+                    if(session==null?elapsed.ElapsedMilliseconds>1000:source.ObservationAgeMs>=10000)
+                        throw new GpuUnavailableException($"GPU observations stalled: age={source.ObservationAgeMs:F0}ms");
                     await Task.Delay(30);continue;
                 }
                 var context=Input();

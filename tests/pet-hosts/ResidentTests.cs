@@ -24,16 +24,18 @@ public static class ResidentTests
         await using var host=new ResidentHost(plan,gpu,output,minimumActionIntervalMs:600,
             inputSource:()=>Native.ReadOperationContext() with{RecentInput=false},traceSource:e=>{if(e.Phase=="effect-active")active.TrySetResult(e.WindowHandle);});
         var before=Native.GetForegroundWindow();
-        await host.ResumeAsync();await Wait(()=>host.Snapshot.Frames>12);
+        await host.ResumeAsync();bool launchPreserved=Native.GetForegroundWindow()==before;await Wait(()=>host.Snapshot.Frames>12);
         long epoch=host.Snapshot.Epoch;long black=await active.Task.WaitAsync(TimeSpan.FromSeconds(8));
-        var latency=Stopwatch.StartNew();await host.PauseAsync();
+        var pauseForeground=Native.GetForegroundWindow();var latency=Stopwatch.StartNew();await host.PauseAsync();
+        bool pausePreserved=Native.GetForegroundWindow()==pauseForeground;
         Check(!Native.IsWindow(new IntPtr(black)) && host.LastAction?.Coverage?.RemovalConfirmed==true && latency.ElapsedMilliseconds<1500,"pause during real blackout confirms removal within 1500 ms");
         Check(host.State==ResidentState.Paused && host.ActivePetWindow==IntPtr.Zero,"pause removes pet, capture and effect before acknowledgment");
-        await host.ResumeAsync();await Wait(()=>host.Snapshot.Frames>12);
+        var resumeForeground=Native.GetForegroundWindow();await host.ResumeAsync();bool resumePreserved=Native.GetForegroundWindow()==resumeForeground;
+        await Wait(()=>host.Snapshot.Frames>12);
         Check(host.Snapshot.Epoch>epoch,"resume refreshes capture history and epoch");
         var hwnd=host.ActivePetWindow;
         Check((Native.GetWindowLongPtr(hwnd,-20).ToInt64()&Native.Transparent)!=0,"resident pet is click-through");
-        Check(Native.GetForegroundWindow()==before,"resident launch and resume preserve focus");
+        Check(launchPreserved && pausePreserved && resumePreserved,"each resident lifecycle transition preserves foreground at its acknowledgment");
         int generation=host.Snapshot.Generations;host.RestartCapture();
         await Wait(()=>host.Snapshot.Generations>generation && host.Snapshot.Frames>12);
         Check(host.State==ResidentState.Running,"resident recovers an actual capture process restart");

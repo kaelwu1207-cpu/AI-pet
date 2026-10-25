@@ -63,6 +63,9 @@ public sealed class VPetActor : IDisposable
             picture=new Picture(graph,Path.GetFullPath(skin.Poses[step.Pose]),new GraphInfo(key),10000);
             pictures.Add(key,picture); graph.AddGraph(picture);
         }
+        // VPet's native timer reads DisplayType on a worker thread. Give Display the
+        // correct type up front: repairing DisplayType afterwards leaves a stop race.
+        picture.GraphInfo.Type=Motion.IsMoving?GraphInfo.GraphType.Move:GraphInfo.GraphType.Common;
         Pet.Display(picture);
         if (Motion.IsMoving) Pet.DisplayType=new GraphInfo("external-target",GraphInfo.GraphType.Move);
         animationTimer.Interval=TimeSpan.FromMilliseconds(step.DurationMs);

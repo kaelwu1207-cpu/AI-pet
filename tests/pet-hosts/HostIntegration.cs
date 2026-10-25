@@ -48,8 +48,11 @@ static class HostIntegration
         using var actor=new VPetActor(scope,new(300,150,120,120),Path.Combine(output,"cache"));
         actor.SetSkin(new("skin-red",new Dictionary<string,string>{{"idle",Path.Combine(output,"red.png")},{"stride",Path.Combine(output,"blue.png")}}));
         actor.Play(new("walk-clip",new[]{new AnimationStep("idle",100),new AnimationStep("stride",100)}));
+        bool transientIdle=false;
+        actor.Pet.GraphDisplayHandler+=info=>{if(actor.Motion.IsMoving && info.Type!=VPet_Simulator.Core.GraphInfo.GraphType.Move)transientIdle=true;};
         var result=await actor.Motion.MoveToAsync(new("move-1",scope.DisplayId,1,450,200,500,2500));
         Check(result.Status=="completed" && result.ActualBounds.X==450 && result.ActualBounds.Y==200,"external target reached in physical pixels");
+        Check(!transientIdle,"animation transitions retain native Move type without a transient idle state");
         var replacement=new Dictionary<string,string>{{"idle",Path.Combine(output,"blue.png")},{"stride",Path.Combine(output,"red.png")}};
         actor.SetSkin(new("skin-blue",replacement));
         var visible=actor.Pet.PetGrid.Visibility==Visibility.Visible?actor.Pet.PetGrid:actor.Pet.PetGrid2;

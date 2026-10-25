@@ -1,6 +1,7 @@
 param([ValidateRange(15,28800)][int]$Seconds=600,[string]$Skin='green',[string]$Motion='wander',[switch]$ExercisePause)
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'));Set-Location -LiteralPath $root
+$env:DOTNET_CLI_HOME="$root/data/toolchains/dotnet-home";$env:TEMP="$root/data/temp";$env:TMP=$env:TEMP
 $id=[guid]::NewGuid().ToString('N');$output="$root/data/receipts/resident/$id"
 New-Item -ItemType Directory -Path $output|Out-Null
 $checkpoint=& git -c "safe.directory=$($root.Replace('\','/'))" rev-parse HEAD
@@ -32,11 +33,14 @@ try{
     }
 }catch{$failure=$_.ToString()}
 finally{
-    if(-not $p.HasExited){$p.StandardInput.WriteLine('exit');$p.StandardInput.Close();if(-not $p.WaitForExit(10000)){$timeout=$true;$p.Kill();$p.WaitForExit()}}
+    if(-not $p.HasExited){
+        try{$p.StandardInput.WriteLine('exit');$p.StandardInput.Close()}catch{if(-not $failure){$failure="Control channel: $_"}}
+        if(-not $p.WaitForExit(10000)){$timeout=$true;$p.Kill();$p.WaitForExit()}
+    }
     $stdout.GetAwaiter().GetResult()|Set-Content "$output/stdout.log";$stderr.GetAwaiter().GetResult()|Set-Content "$output/stderr.log"
     $p.Refresh();$same=@($sources|Where-Object{(Get-FileHash -LiteralPath $_.path).Hash -ne $_.sha256}).Count -eq 0
     $end=$null;if(Test-Path "$output/run/resident-result.json"){$end=Get-Content "$output/run/resident-result.json" -Raw|ConvertFrom-Json}
-    $samples=@();foreach($file in @("$output/run/metrics.jsonl.previous","$output/run/metrics.jsonl")){if(Test-Path $file){$samples+=@(Get-Content $file|ForEach-Object{$_|ConvertFrom-Json})}}
+    $samples=@();foreach($file in @("$output/run/metrics.jsonl.previous","$output/run/metrics.jsonl")){if(Test-Path $file){$samples+=@(Get-Content $file|ForEach-Object{try{$_|ConvertFrom-Json}catch{if(-not $failure){$failure='Partial metric record'}}})}}
     $warm=@($samples|Where-Object{([datetime]$_.Utc-[datetime]$samples[0].Utc).TotalSeconds -ge 15})
     function Peak($field){if($samples.Count){($samples|Measure-Object -Property $field -Maximum).Maximum}else{0}}
     function Median($items,$field){$values=@($items|ForEach-Object{[double]$_.$field}|Sort-Object);if($values.Count){$values[[int][Math]::Floor($values.Count/2)]}else{$null}}

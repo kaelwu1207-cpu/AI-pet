@@ -1,0 +1,51 @@
+{
+  "Rig": "kenney-platformer/1",
+  "Source": "https://kenney.nl/assets/new-platformer-pack",
+  "Version": "1.0.0",
+  "Schema": "aipet.skin/1",
+  "Author": "Kenney",
+  "License": "LICENSE.txt",
+  "Id": "pink",
+  "Poses": {
+    "jump": {
+      "Sha256": "F4A41D9C0A8D2B9BB6E88F0B818FE562FBB59C1D352D4CE96B52BF77A58C857C",
+      "Path": "resources/jump.png",
+      "Bytes": 3442
+    },
+    "climb-a": {
+      "Sha256": "417BEC2BEB12D86B24EBFE5D44DE47845478FAD998D176BE9A3CABA408F90E51",
+      "Path": "resources/climb_a.png",
+      "Bytes": 3225
+    },
+    "walk-b": {
+      "Sha256": "6B08EE78C35BDF289AC7F27E1323809F906BA80D192B4C15E16FFF989141B4A0",
+      "Path": "resources/walk_b.png",
+      "Bytes": 3480
+    },
+    "climb-b": {
+      "Sha256": "C721E7BAEFF2E3E0FCF3851DBED52457EAC0CAA7BB7506FE265E3CB6F82B2226",
+      "Path": "resources/climb_b.png",
+      "Bytes": 3221
+    },
+    "front": {
+      "Sha256": "512B5C17F902B1145F5BFB1E2DD9F165A818312FD4E51E7C3F311857A977EB30",
+      "Path": "resources/front.png",
+      "Bytes": 3394
+    },
+    "walk-a": {
+      "Sha256": "DF3E9347ECA78DD6AD284E34BFCA24C8E20D9C5567CDDCF7AFCE97B35E25E750",
+      "Path": "resources/walk_a.png",
+      "Bytes": 3392
+    },
+    "duck": {
+      "Sha256": "CD2A0B48CC4184DCF02345081D2190642538ADC903606EBB18C11BFE727977E0",
+      "Path": "resources/duck.png",
+      "Bytes": 3206
+    },
+    "idle": {
+      "Sha256": "ADBF4740643BE0D2E7D8528C079C43ED33D2BE9AF2AFD488228750CA6D45E89D",
+      "Path": "resources/idle.png",
+      "Bytes": 3357
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "Version": "1.0.0",
+  "Id": "rest",
+  "Steps": [
+    {
+      "DurationMs": 1300,
+      "Pose": "idle"
+    },
+    {
+      "DurationMs": 300,
+      "Pose": "front"
+    },
+    {
+      "DurationMs": 200,
+      "Pose": "duck"
+    }
+  ],
+  "Rig": "kenney-platformer/1",
+  "Schema": "aipet.motion/1"
+}

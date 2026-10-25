@@ -1,0 +1,24 @@
+{
+  "Version": "1.0.0",
+  "Id": "wander",
+  "Steps": [
+    {
+      "DurationMs": 180,
+      "Pose": "walk-a"
+    },
+    {
+      "DurationMs": 180,
+      "Pose": "walk-b"
+    },
+    {
+      "DurationMs": 300,
+      "Pose": "jump"
+    },
+    {
+      "DurationMs": 600,
+      "Pose": "idle"
+    }
+  ],
+  "Rig": "kenney-platformer/1",
+  "Schema": "aipet.motion/1"
+}

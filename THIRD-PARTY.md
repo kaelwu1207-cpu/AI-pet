@@ -14,3 +14,7 @@ VPet 与 eSheep 固定源码研究副本已进入 data/upstream，未纳入项�
 Rust 实际使用 windows-capture 2.0.1，传递依赖及校验和由 src/capture-rust/Cargo.lock 固定；工具链 Rust 1.99.1。VPet 构建使用私有 .NET SDK 8.0.426 与其 csproj 声明依赖，完整分发依赖/资源声明在主体集成门冻结。OBS/libobs、ScreenCapture.NET 仍仅为备选研究，未嵌入。
 
 本仓库自有源码/文档采用根 LICENSE 的 Apache-2.0，版权与许可声明见 NOTICE。第三方依赖及素材保留各自许可；公开源码仓库通过API引用依赖，固定研究副本和构建产物位于排除Git的data。分发程序时必须补齐实际依赖的许可文本与通知，项目许可不替代其义务或角色素材的授权。
+# 内置分发素材
+
+`assets/skins/{green,pink}`：Kenney New Platformer Pack 1.1，CC0，来源及归档指纹见 assets/README.md；各包保留原始 License.txt。动画时序为 AI-pet 自有代码/定义。VPet 原角色美术未进入本仓库。
+

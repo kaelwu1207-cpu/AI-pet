@@ -42,3 +42,4 @@ Rust `topology.rs` 通过QueryDisplayConfig取得活动路径，用DisplayConfig
 - [GetDpiForWindow](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getdpiforwindow)：所选显示器上Per-Monitor窗口的有效DPI。
 
 原始元数据和设备路径只在本地data回执中保存；公开源码包含适配和测试定义。相关证据至少保留至M01/G2集中验收，角色索引由docs/README和主计划维护。
+常驻宿主通过相同稳定身份和epoch契约复用本模块，Rust增加父宿主续租模式；暂停/恢复、10秒静默重开宽限和8小时运行状态见 RESIDENT-HOST.md。有界验证入口继续保留原时限。

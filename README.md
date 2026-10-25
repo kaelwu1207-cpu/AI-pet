@@ -2,7 +2,7 @@
 
 AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬、玩耍与局部魔法，间歇改变、遮挡或调暗长期静止的画面。后台根据静态暴露、实际覆盖时长和操作避让安排活动，前台保持自然、有性格的表现。
 
-当前阶段：**识别夹具与阈值已冻结，5120×2160全屏GPU统计已驱动覆盖闭环，设备接口身份和有界拓扑恢复已接通。** 固定细线、闪烁、自遮挡、全屏网格公平性和采集重开已有本地证据；真实多屏、物理插拔与完整产品待验收。Git 元数据位于本目录 `.git`，初始文档提交为 `7c6c3bc05949f053abf40f7de952729371d4f5e4`。当前 Windows 仅枚举到一块活动显示器。执行与边界见 [识别及资源基线](docs/OBSERVATION-BASELINE.md)、[显示生命周期](docs/DISPLAY-LIFECYCLE.md) 和 [闭环实现](docs/CLOSED-LOOP.md)。
+当前阶段：**已形成带系统托盘的常驻宿主，可暂停、恢复和退出，正式CC0角色皮肤与独立动画包已接入。** 冻结阈值上的5120×2160 GPU观察、局部覆盖、实际回执和采集重开持续复用现有模块。完整运行计量与长稳状态见 [常驻宿主](docs/RESIDENT-HOST.md)；真实多屏、物理插拔与完整产品待验收。Git 元数据位于本目录 `.git`，初始文档提交为 `7c6c3bc05949f053abf40f7de952729371d4f5e4`。当前 Windows 仅枚举到一块活动显示器。
 
 ## 文档入口与权威顺序
 
@@ -21,13 +21,15 @@ AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬�
 | [docs/CLOSED-LOOP.md](docs/CLOSED-LOOP.md) | GPU 静态历史、遮罩代次、公平调度、操作避让与闭环证据 |
 | [docs/OBSERVATION-BASELINE.md](docs/OBSERVATION-BASELINE.md) | 冻结识别参数/真值夹具、全屏统计与资源预算 |
 | [docs/DISPLAY-LIFECYCLE.md](docs/DISPLAY-LIFECYCLE.md) | 显示器设备接口身份、负坐标、拓扑代次与有界恢复 |
+| [docs/RESIDENT-HOST.md](docs/RESIDENT-HOST.md) | 常驻控制、正式资源包、完整运行计量与长稳记录 |
+| [assets/README.md](assets/README.md) | 内置CC0角色来源、逐帧指纹和独立动画时序 |
 | [contracts/README.md](contracts/README.md) | 机器定义与冻结基线的用途、维护和版本规则 |
 | [THIRD-PARTY.md](THIRD-PARTY.md) | 已采用组件及版本；`requirements-capture.txt` 锁定验证环境依赖 |
 | [LICENSE](LICENSE)、[NOTICE](NOTICE) | 项目自有源码/文档采用 Apache-2.0；维护版权与第三方许可边界，随分发保留 |
 
 用户最新明确指令与全局/上级目录规则优先。产品目标由 PRODUCT 维护；计划执行由 PLAN 维护；接口和资源包分别由 CONTRACTS、ASSET-PACKS 维护。冲突应显式修订相关文档后继续，文件名和修改时间不改变权威角色。
 
-项目已获所有者公开开源授权，自有源码/文档采用 Apache-2.0。公开仓库为 [kaelwu1207-cpu/AI-pet](https://github.com/kaelwu1207-cpu/AI-pet)，当前开发分支为 `feature/reuse-integration`；GitHub 作为本地Git检查点的协作镜像。当前源码验证基线为 `2ee081d`，后续文档检查点沿同一分支维护。源码镜像不包含本地data、第三方研究副本、凭据、画面或正式安装包。
+项目已获所有者公开开源授权，自有源码/文档采用 Apache-2.0。公开仓库为 [kaelwu1207-cpu/AI-pet](https://github.com/kaelwu1207-cpu/AI-pet)，当前开发分支为 `feature/reuse-integration`；GitHub 作为本地Git检查点的协作镜像。当前常驻运行基线为 `caf0983`，完整闭环回归见 `98d2fbf`，后续文档检查点沿同一分支维护。源码镜像不包含本地data、第三方研究副本、凭据、画面或正式安装包。
 
 ## 项目根与数据角色登记
 
@@ -38,7 +40,7 @@ AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬�
 | 开发源码与程序定义 | `D:\ai\projects\AI-pet` | 已存在；独立本地 Git 持久维护 |
 | 开发数据根 | `D:\ai\projects\AI-pet\data` | 已建立；[角色与生命周期](data/README.md)，排除于 Git 和程序包 |
 | Hyper-V 数据 | `D:\ai\projects\AI-pet\data\hyperv` | 规划；子盘、配置、受保护控制凭据、输入和生命周期记录；每次运行按登记完成事件处置私有状态 |
-| 一致输入与资源试验输入 | `D:\ai\projects\AI-pet\data\inputs` | 规划；只读快照和已许可外部输入；按来源及对应运行到期规则保留 |
+| 一致输入与资源试验输入 | `D:\ai\projects\AI-pet\data\inputs` | 已建立Kenney许可原始资源与展开副本；只读输入按来源及对应运行到期规则保留 |
 | 有界工程回执 | `D:\ai\projects\AI-pet\data\receipts` | 已建立采集回执；保留状态、指标、错误与校验；至少保留到相关集中门禁关闭，随后按回执保留要求复核 |
 | 开发模型/资源/依赖缓存 | `D:\ai\projects\AI-pet\data\cache` | 已建立依赖缓存；按依赖引用及空间预算清理；不进入源码包 |
 | 开发配置与凭据 | `D:\ai\projects\AI-pet\data\config` | 规划；凭据保护存储，日志脱敏；到期或替换后撤销引用 |
@@ -53,7 +55,7 @@ AI-pet 是 Windows 桌面宠物：在持续工作期间，通过飞行、攀爬�
 
 已建立 `src/host`、`src/capture`、`src/capture-rust`、`tools/capture`、`tools/pet-hosts`、`tools/host`、`tools/loop`、`tests/capture`、`tests/pet-hosts` 和 `data`，分别由 [采集模块说明](src/capture/README.md)、[Rust GPU 消费者](src/capture-rust/README.md)、[工具索引](tools/README.md)、[测试索引](tests/README.md)、[数据角色](data/README.md)覆盖。后续模块布局如下：
 
-- `src/host/` 已建立：VPet主体、目标控制、独立黑幕、静态区域聚合、公平账本、操作策略和闭环编排，说明见 [宿主模块](src/host/README.md)；完整设置/常驻能力待接入。
+- `src/host/` 已建立：VPet主体、目标控制、独立黑幕、静态区域聚合、公平账本、操作策略、常驻托盘和资源加载，说明见 [宿主模块](src/host/README.md)；完整每屏设置继续推进。
 - `src/capture-rust/` 已建立GPU逐像素历史与细分块统计；`src/observation/`、`src/coverage/` 是后续跨宿主提取布局，当前逻辑按类独立位于宿主项目。
 - `src/pet/`、`src/effects/`、`src/assets/`：运动表现、局部效果和资源包加载。
 - `src/vision/`、`src/integrations/`：视觉模型与 API/任务监控适配器。

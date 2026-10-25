@@ -3,7 +3,7 @@
   "Id": "rest",
   "Steps": [
     {
-      "DurationMs": 1300,
+      "DurationMs": 300,
       "Pose": "idle"
     },
     {

@@ -58,6 +58,8 @@ public sealed class CoverageScheduler(int seed,string? displayId=null,long? topo
     readonly Random random=new(seed);
     readonly Dictionary<int,double> serviceMs=new();
     readonly HashSet<string> receipts=new();
+    readonly Queue<(string Id,long Start)> receiptOrder=new();
+    long expiredBefore=-1;
     readonly Dictionary<int,double> retryAfter=new();
     public double WindowServiceMs(int regionId)=>serviceMs.GetValueOrDefault(regionId);
     public StaticRegion? Select(IEnumerable<StaticRegion> regions,OperationContext input,double nowMs)
@@ -76,14 +78,15 @@ public sealed class CoverageScheduler(int seed,string? displayId=null,long? topo
             || (displayId!=null && receipt.DisplayId!=displayId) || (topologyEpoch!=null && receipt.TopologyEpoch!=topologyEpoch))
             throw new ArgumentException("Receipt identity or version mismatch");
         if(receipts.Contains(planId)) return;
-        if(receipts.Count>=4096) throw new InvalidOperationException("Receipt budget exhausted");
         if(receipt.EvidenceLevel=="compositor-submitted-window-observed" && (region.Bounds.Area<=0 || receipt.ClockFrequency<=0
             || receipt.StartTicks<0 || receipt.LastObservedTicks<receipt.StartTicks || receipt.ObservedMs is <0 or >10000
             || !double.IsFinite(receipt.ObservedMs) || !double.IsFinite(receipt.WindowPixelMs)
             || Math.Abs(receipt.ObservedMs-(receipt.LastObservedTicks-receipt.StartTicks)*1000.0/receipt.ClockFrequency)>0.01
             || Math.Abs(receipt.WindowPixelMs-receipt.ActualBounds.Area*receipt.ObservedMs)>0.1))
             throw new ArgumentException("Receipt measurements are inconsistent");
-        receipts.Add(planId);
+        if(receipt.StartTicks<=expiredBefore)return;
+        if(receipts.Count>=4096){var old=receiptOrder.Dequeue();receipts.Remove(old.Id);expiredBefore=Math.Max(expiredBefore,old.Start);}
+        receipts.Add(planId);receiptOrder.Enqueue((planId,receipt.StartTicks));
         if(receipt.EvidenceLevel!="compositor-submitted-window-observed" || !receipt.RemovalConfirmed
             || receipt.ObservedMs<0 || !double.IsFinite(receipt.ObservedMs) || receipt.BlendMode!="opaque-black" || receipt.Alpha!=1) return;
         double fraction=Geometry.IntersectionArea(region.Bounds,receipt.ActualBounds)/(double)region.Bounds.Area;

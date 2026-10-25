@@ -9,12 +9,15 @@ public sealed class EffectSession : IAsyncDisposable
     readonly EffectRequest request;
     readonly DispatcherTimer heartbeat=new() { Interval=TimeSpan.FromMilliseconds(100) };
     readonly Task<CoverageReceipt> completion;
+    EffectProcessMetrics metrics=new(0,0,0,0);
+    void Sample() {if(process.HasExited)return;process.Refresh();metrics=new(Math.Max(metrics.CpuMs,process.TotalProcessorTime.TotalMilliseconds),
+        Math.Max(metrics.PrivatePeakBytes,process.PrivateMemorySize64),Math.Max(metrics.WorkingSetPeakBytes,process.WorkingSet64),Math.Max(metrics.HandlesPeak,process.HandleCount));}
     public IntPtr Hwnd { get; }
     public int ProcessId => process.Id;
     public int ExitCode => process.ExitCode;
     EffectSession(Process child,IntPtr hwnd,EffectRequest effectRequest) {
         process=child; Hwnd=hwnd; request=effectRequest;
-        heartbeat.Tick+=(_,_)=> { try { if(!process.HasExited) process.StandardInput.WriteLine("beat"); } catch { heartbeat.Stop(); } };
+        Sample();heartbeat.Tick+=(_,_)=> { try { if(!process.HasExited){Sample();process.StandardInput.WriteLine("beat");} } catch { heartbeat.Stop(); } };
         heartbeat.Start(); completion=CollectAsync();
     }
     public static Task<EffectSession> StartAsync(EffectRequest request) => LaunchAsync(request,false);
@@ -47,15 +50,16 @@ public sealed class EffectSession : IAsyncDisposable
         string output=await outputTask;
         string errors=await errorTask;
         heartbeat.Stop();
+        metrics=metrics with{CpuMs=process.TotalProcessorTime.TotalMilliseconds};
         CoverageReceipt? receipt=null;
         try { receipt=JsonSerializer.Deserialize<CoverageReceipt>(output.Trim()); } catch(JsonException) { }
         if(receipt==null || receipt.PlanId!=request.PlanId || receipt.DisplayId!=request.Display.DisplayId
             || receipt.TopologyEpoch!=request.Display.TopologyEpoch) {
             return new("aipet.coverage/0.1",request.PlanId,request.Display.DisplayId,request.Display.TopologyEpoch,
                 new(0,0,0,0),0,0,Stopwatch.Frequency,0,0,"unknown",0,"worker-exited-without-receipt",!Native.IsWindow(Hwnd),
-                false,"missing","unknown",process.ExitCode);
+                false,"missing","unknown",process.ExitCode,metrics);
         }
-        return receipt with { RemovalConfirmed=!Native.IsWindow(Hwnd),WorkerExitCode=process.ExitCode };
+        return receipt with { RemovalConfirmed=!Native.IsWindow(Hwnd),WorkerExitCode=process.ExitCode,WorkerMetrics=metrics };
     }
     public Task<CoverageReceipt> Completion => completion;
     public async Task<CoverageReceipt> CancelAsync() {

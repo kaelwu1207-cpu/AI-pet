@@ -34,6 +34,8 @@ struct Config {
     tile_size: u32,
     #[serde(default = "default_duration")]
     duration_ms: u64,
+    #[serde(default)]
+    resident: bool,
 }
 fn default_tile() -> u32 {
     16
@@ -173,9 +175,16 @@ fn run() -> Result<i32, Error> {
     let frames = Arc::new(AtomicU64::new(0));
     let command_stop = Arc::clone(&stop);
     let command_masks = Arc::clone(&masks);
+    let lease_origin = Instant::now();
+    let lease = Arc::new(AtomicU64::new(0));
+    let command_lease = Arc::clone(&lease);
     thread::spawn(move || {
         for line in io::stdin().lock().lines() {
             let Ok(line) = line else { break };
+            if line == "heartbeat" {
+                command_lease.store(lease_origin.elapsed().as_millis() as u64, Ordering::SeqCst);
+                continue;
+            }
             if line == "restart" {
                 command_restart.store(true, Ordering::SeqCst);
                 break;
@@ -221,8 +230,15 @@ fn run() -> Result<i32, Error> {
     let mut reason = None;
     while !stop.load(Ordering::SeqCst)
         && !control.is_finished()
-        && start.elapsed() < Duration::from_millis(config.duration_ms)
+        && (config.resident || start.elapsed() < Duration::from_millis(config.duration_ms))
     {
+        if config.resident
+            && (lease_origin.elapsed().as_millis() as u64)
+                .saturating_sub(lease.load(Ordering::SeqCst)) > 2000
+        {
+            reason = Some("host-lease-expired");
+            break;
+        }
         if Instant::now() >= next_topology {
             match aipet_gpu_probe::topology::snapshot() {
                 Ok(next) if next.signature == topology.signature => {}

@@ -36,3 +36,7 @@
 
 外部入口：`AIpet.Host --closed-loop <resolved-loop-plan.json> <observe.exe> <fresh-data-output-directory>`。运行限1—12秒、最多8个动作，当前单主屏有界ROI。完整验证在 tools/loop/verify.ps1，结果边界见 docs/CLOSED-LOOP.md。
 `DisplayTopology` 读取独立Rust元数据入口，`TopologyTracker` 按设备接口路径和完整布局建立代次。`RecoveringLoop` 管理有界捕获重开：先撤除并关闭旧角色/效果/采集，等待同一显示器可用，再按新边界重建ROI、历史和账本；每次源重开使用新epoch。外部 --closed-loop 入口默认经过此协调器。所有阶段结果保留在运行输出epochs目录，汇总recovery-result与loop-result分别供诊断和已有消费者使用。
+# 常驻及资源包
+
+`ResidentHost` 复用 ClosedLoop、VPet Core、GpuObserver 与 EffectSession，提供串行暂停/恢复/退出；每个连续运行代次保留公平账本，暂停/恢复重建静态历史。`ResidentTray` 使用系统 NotifyIcon，菜单为暂停/继续/退出；开发控制使用被启动方持有的重定向 stdin，同步结束以 EOF 退出。`AssetPacks` 验证本地清单与 PNG，再解析至既有 VPet Picture/动画接口。相关接口、预算和运行入口见 docs/RESIDENT-HOST.md，工具见 tools/resident。
+

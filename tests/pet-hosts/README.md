@@ -19,3 +19,5 @@ AI-pet 维护，可运行测试定义随 Git 保留；第三方源码、私有�
 
 `AssetTests.cs`、`AssetMain.cs`、`asset-tests.csproj` 验证内置两皮肤×两动作组合、外观/时序独立和路径拒绝。与本目录整合测试共同维护；测试输出归 data。
 
+`ResidentTests.cs`、`resident-tests.csproj` 在真实GPU与窗口上验证活动黑幕暂停、资源撤除、新epoch恢复、原生穿透/焦点和采集重开。仅测试的自有白色区域用于确定产生覆盖，原生近期输入语义另由既有测试覆盖。测试定义随生命周期修改维护。
+

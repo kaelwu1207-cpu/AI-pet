@@ -5,6 +5,11 @@ public static class Program
     {
         Native.EnableDpi();
         try {
+            if(args.Length==4 && args[0]=="--resident") {
+                if(new System.IO.FileInfo(args[1]).Length>65536)throw new ArgumentException("Resident configuration exceeds budget");
+                var config=System.Text.Json.JsonSerializer.Deserialize<ResidentPlan>(System.IO.File.ReadAllText(args[1]))??throw new ArgumentException("Missing resident configuration");
+                return HostRun.RunDispatcher(()=>ResidentTray.RunAsync(config,args[2],args[3]));
+            }
             if(args.Length==1 && args[0] is "--overlay" or "--overlay-test-hang") return BlackoutWorker.Run(args[0]=="--overlay-test-hang");
             if(args.Length==1 && args[0]=="--describe-display") {
                 Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new DisplayScope("session-primary",1,new(0,0,Native.GetSystemMetrics(0),Native.GetSystemMetrics(1))))); return 0;

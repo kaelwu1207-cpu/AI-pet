@@ -33,4 +33,5 @@ public sealed record OverlayReady(string Nonce, long Hwnd);
 public sealed record CoverageReceipt(string SchemaVersion, string PlanId, string DisplayId, long TopologyEpoch,
     PixelRect ActualBounds, long StartTicks, long LastObservedTicks, long ClockFrequency,
     double ObservedMs, double WindowPixelMs, string BlendMode, double Alpha, string EndReason,
-    bool RemovalConfirmed, bool FocusPreserved, string EvidenceLevel, string OcclusionStatus, int? WorkerExitCode=null);
+    bool RemovalConfirmed, bool FocusPreserved, string EvidenceLevel, string OcclusionStatus, int? WorkerExitCode=null,EffectProcessMetrics? WorkerMetrics=null);
+public sealed record EffectProcessMetrics(double CpuMs,long PrivatePeakBytes,long WorkingSetPeakBytes,int HandlesPeak);

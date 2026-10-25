@@ -39,6 +39,12 @@ static class LoopLogic
         invalid=false;try{new StaticMap().Accept(new(1,1000,0,new(0,0,32,16),new[]{tile,tile},true,false));}catch(ArgumentException){invalid=true;}
         Check(invalid,"duplicate GPU tiles cannot inflate full-grid counts");
         TopologyTests.Run();
+        var residentLedger=new CoverageScheduler(1,"display",2);
+        for(int i=0;i<5000;i++)residentLedger.Apply("long-"+i,region,receipt with{PlanId="long-"+i,StartTicks=i*200+1,LastObservedTicks=i*200+101});
+        Check(residentLedger.WindowServiceMs(region.Id)==500000,"resident ledger survives 5000 measured actions");
+        residentLedger.Apply("long-0",region,receipt with{PlanId="long-0"});
+        Check(residentLedger.WindowServiceMs(region.Id)==500000,"expired receipt replay cannot double-credit long-running ledger");
         Console.WriteLine("RESULT loop logic passed");
     }
 }
+

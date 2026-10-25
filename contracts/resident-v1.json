@@ -1,0 +1,14 @@
+{
+  "Schema": "aipet.resident-budget/1",
+  "ReferencePixels": 11059200,
+  "ActionIntervalMs": 5000,
+  "WarmupSeconds": 120,
+  "ReferenceMeasurementSeconds": 600,
+  "LongStabilitySeconds": 28800,
+  "CpuMachinePercent": 5,
+  "PrivateComponentPeaksSumBytes": 1073741824,
+  "HostPrivateGrowthBytes": 67108864,
+  "SourcePrivateGrowthBytes": 67108864,
+  "HostHandleGrowth": 64,
+  "SourceHandleGrowth": 64
+}

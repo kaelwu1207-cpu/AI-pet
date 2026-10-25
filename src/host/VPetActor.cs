@@ -36,7 +36,7 @@ public sealed class VPetActor : IDisposable
         Motion = new TargetController(Window, scope);
         Pet = new VPet_Simulator.Core.Main(new GameCore { Controller=Motion, Graph=graph, Save=new GameSave() });
         Motion.Attach(Pet); Window.Content=Pet;
-        Native.MakePassive(Window, false); Window.Show(); Native.Place(Native.Handle(Window), bounds);
+        Native.MakePassive(Window, true); Window.Show(); Native.Place(Native.Handle(Window), bounds);
         animationTimer.Tick += (_, _) => { frame=(frame+1)%clip!.Steps.Count; ShowFrame(); };
     }
     public void SetSkin(SkinDefinition next)
